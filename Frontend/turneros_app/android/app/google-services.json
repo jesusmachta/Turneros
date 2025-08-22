@@ -1,0 +1,190 @@
+{
+  "project_info": {
+    "project_number": "228344336816",
+    "project_id": "farmaturnos",
+    "storage_bucket": "farmaturnos.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:228344336816:android:7d7135944803f38cc50675",
+        "android_client_info": {
+          "package_name": "com.mycompany.FarmaTurnos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "228344336816-9l0q1ivhfu882lhqlalfpgc2mat11uik.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.FarmaTurnos",
+            "certificate_hash": "1c89eaae248abfbc076e9a015fd13e6d93c3429c"
+          }
+        },
+        {
+          "client_id": "228344336816-ianiba71meumpntep877tsmplca5orsc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.FarmaTurnos",
+            "certificate_hash": "151026c88a103b2eb33547ae978f51baf9aec534"
+          }
+        },
+        {
+          "client_id": "228344336816-p46kkquhv3p5njgqdoontk36f3ulpeni.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.FarmaTurnos",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "228344336816-qtqpfjviu97fals7f09pgo0q5fke1l4e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.FarmaTurnos",
+            "certificate_hash": "ba4e82a47d20cb6cb0fc8ebca1cbca60c3efcaeb"
+          }
+        },
+        {
+          "client_id": "228344336816-tde7e9uko0upco0r3m8gj7oi4m5a6pcr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.FarmaTurnos",
+            "certificate_hash": "c1391bc1e54806ed9c544c0daa748cfed799b0b9"
+          }
+        },
+        {
+          "client_id": "228344336816-vinfojvhf5e39iuvr7fuhk7e40acdstf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuRtWk6ZpQTVD06-ZFmKOsO4CZmKvPoSU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "228344336816-f4vclbl99flos4gftmodn9tbuf3f49io.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "228344336816-iab5kub7cngm7km13dlacdm0d0b7be81.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.FarmaTurnos"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:228344336816:android:e9a0f22a0dc1570cc50675",
+        "android_client_info": {
+          "package_name": "com.mycompany.appdeturnosdefarmacia"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "228344336816-1pr1r3c11j4airmturl166vupjbdmsdf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.appdeturnosdefarmacia",
+            "certificate_hash": "c1391bc1e54806ed9c544c0daa748cfed799b0b9"
+          }
+        },
+        {
+          "client_id": "228344336816-1tqlglr4su2ac979q53nknnfm0jslt5o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.appdeturnosdefarmacia",
+            "certificate_hash": "151026c88a103b2eb33547ae978f51baf9aec534"
+          }
+        },
+        {
+          "client_id": "228344336816-nuu0k1n0ml9174k3aal5ot9l8hj8aa09.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.appdeturnosdefarmacia",
+            "certificate_hash": "ba4e82a47d20cb6cb0fc8ebca1cbca60c3efcaeb"
+          }
+        },
+        {
+          "client_id": "228344336816-pugv2nu8sg6idqv49l15rkl26fv3cis2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.appdeturnosdefarmacia",
+            "certificate_hash": "1c89eaae248abfbc076e9a015fd13e6d93c3429c"
+          }
+        },
+        {
+          "client_id": "228344336816-vinfojvhf5e39iuvr7fuhk7e40acdstf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuRtWk6ZpQTVD06-ZFmKOsO4CZmKvPoSU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "228344336816-f4vclbl99flos4gftmodn9tbuf3f49io.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "228344336816-iab5kub7cngm7km13dlacdm0d0b7be81.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.FarmaTurnos"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:228344336816:android:60ac2a2b60243a34c50675",
+        "android_client_info": {
+          "package_name": "com.turneros.turneros_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "228344336816-vinfojvhf5e39iuvr7fuhk7e40acdstf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuRtWk6ZpQTVD06-ZFmKOsO4CZmKvPoSU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "228344336816-f4vclbl99flos4gftmodn9tbuf3f49io.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "228344336816-iab5kub7cngm7km13dlacdm0d0b7be81.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.FarmaTurnos"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
