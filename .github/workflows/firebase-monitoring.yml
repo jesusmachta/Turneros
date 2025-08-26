@@ -1,0 +1,137 @@
+name: Firebase Project Monitoring
+
+on:
+  schedule:
+    # Ejecutar cada hora durante el día (8 AM - 8 PM UTC)
+    - cron: "0 8-20 * * *"
+  workflow_dispatch:
+
+jobs:
+  firebase-status:
+    name: Firebase Services Status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Firebase Hosting Status
+        run: |
+          echo "🔥 Checking Firebase Hosting..."
+
+          # Verificar que el sitio responda
+          if curl -f -s https://turneros.web.app/ > /dev/null; then
+            echo "✅ Firebase Hosting is online"
+          else
+            echo "❌ Firebase Hosting is down"
+            exit 1
+          fi
+
+      - name: Check Firebase Console Access
+        run: |
+          echo "🔥 Checking Firebase Console..."
+
+          # Verificar acceso a la consola de Firebase
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://console.firebase.google.com/project/farmaturnos)
+          if [ $response -eq 200 ] || [ $response -eq 302 ]; then
+            echo "✅ Firebase Console is accessible"
+          else
+            echo "❌ Firebase Console returned HTTP $response"
+          fi
+
+      - name: Performance Metrics
+        run: |
+          echo "📈 Performance Metrics for turneros.web.app:"
+
+          # Tiempo de carga
+          load_time=$(curl -o /dev/null -s -w "%{time_total}" https://turneros.web.app/)
+          echo "⏱️ Load time: ${load_time}s"
+
+          # Tamaño de respuesta
+          size=$(curl -s -w "%{size_download}" -o /dev/null https://turneros.web.app/)
+          echo "📦 Response size: $((size / 1024))KB"
+
+          # DNS lookup time
+          dns_time=$(curl -o /dev/null -s -w "%{time_namelookup}" https://turneros.web.app/)
+          echo "🌐 DNS lookup: ${dns_time}s"
+
+      - name: SSL Certificate Check
+        run: |
+          echo "🔒 SSL Certificate Status:"
+
+          # Verificar certificado SSL
+          echo | openssl s_client -servername turneros.web.app -connect turneros.web.app:443 2>/dev/null | \
+          openssl x509 -noout -dates
+
+          # Verificar expiración
+          expiry=$(echo | openssl s_client -servername turneros.web.app -connect turneros.web.app:443 2>/dev/null | \
+          openssl x509 -noout -enddate | cut -d= -f2)
+          echo "📅 Certificate expires: $expiry"
+
+  uptime-monitoring:
+    name: Uptime Monitoring
+    runs-on: ubuntu-latest
+    steps:
+      - name: Website Uptime Check
+        run: |
+          echo "⏰ Uptime Monitoring Report"
+
+          # Realizar múltiples requests para verificar consistencia
+          success=0
+          total=5
+
+          for i in $(seq 1 $total); do
+            if curl -f -s https://turneros.web.app/ > /dev/null; then
+              success=$((success + 1))
+              echo "✅ Request $i: Success"
+            else
+              echo "❌ Request $i: Failed"
+            fi
+            sleep 2
+          done
+
+          uptime_percentage=$((success * 100 / total))
+          echo "📊 Uptime: $uptime_percentage% ($success/$total requests successful)"
+
+          if [ $uptime_percentage -lt 80 ]; then
+            echo "🚨 ALERT: Uptime is below 80%"
+            exit 1
+          fi
+
+  deployment-status:
+    name: Check Latest Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Firebase Hosting Deployment Info
+        run: |
+          echo "🚀 Deployment Information:"
+          echo "Site URL: https://turneros.web.app/"
+          echo "Project ID: farmaturnos"
+          echo "Last checked: $(date)"
+
+          # Verificar headers de respuesta
+          echo "📋 Response Headers:"
+          curl -s -I https://turneros.web.app/ | head -10
+
+  notification:
+    name: Send Status Notification
+    runs-on: ubuntu-latest
+    needs: [firebase-status, uptime-monitoring, deployment-status]
+    if: always()
+    steps:
+      - name: Create Status Report
+        run: |
+          echo "📊 Firebase Monitoring Summary" >> $GITHUB_STEP_SUMMARY
+          echo "================================" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔥 **Firebase Status**: ${{ needs.firebase-status.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "⏰ **Uptime Check**: ${{ needs.uptime-monitoring.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Deployment Status**: ${{ needs.deployment-status.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🕐 **Report Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 **Site URL**: https://turneros.web.app/" >> $GITHUB_STEP_SUMMARY
+
+          # Determinar estado general
+          if [ "${{ needs.firebase-status.result }}" == "success" ] && \
+             [ "${{ needs.uptime-monitoring.result }}" == "success" ] && \
+             [ "${{ needs.deployment-status.result }}" == "success" ]; then
+            echo "🟢 **Overall Status**: All systems operational" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "🔴 **Overall Status**: Issues detected" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -48,12 +48,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyC5z1BqnClJ6puVr6z2saJp3e0u1RgHGQI',
-    appId: '1:228344336816:web:26ef8c898bd2d4e0c50675',
+    appId: '1:228344336816:web:88b5b4e288da8b46c50675',
     messagingSenderId: '228344336816',
     projectId: 'farmaturnos',
     authDomain: 'farmaturnos.firebaseapp.com',
     storageBucket: 'farmaturnos.firebasestorage.app',
-    measurementId: 'G-SHJQHH87SW',
+    measurementId: 'G-WZ87JKNHDX',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -70,8 +70,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '228344336816',
     projectId: 'farmaturnos',
     storageBucket: 'farmaturnos.firebasestorage.app',
-    androidClientId: '228344336816-1pr1r3c11j4airmturl166vupjbdmsdf.apps.googleusercontent.com',
-    iosClientId: '228344336816-lmfjrq7645hhtp7mqinu70c8metogr0n.apps.googleusercontent.com',
+    androidClientId:
+        '228344336816-1pr1r3c11j4airmturl166vupjbdmsdf.apps.googleusercontent.com',
+    iosClientId:
+        '228344336816-lmfjrq7645hhtp7mqinu70c8metogr0n.apps.googleusercontent.com',
     iosBundleId: 'com.turneros.turnerosApp',
   );
 }
