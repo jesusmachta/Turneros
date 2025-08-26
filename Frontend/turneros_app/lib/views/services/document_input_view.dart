@@ -492,12 +492,12 @@ class _DocumentInputViewState extends State<DocumentInputView> {
                   color: Colors.white,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: primaryBlue.withValues(alpha: 0.2),
+                    color: primaryBlue.withOpacity(0.2),
                     width: borderWidth.clamp(1.0, 3.0), // Mínimo 1, máximo 3
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryBlue.withValues(alpha: 0.15),
+                      color: primaryBlue.withOpacity(0.15),
                       blurRadius: blurRadius.clamp(
                         4.0,
                         16.0,

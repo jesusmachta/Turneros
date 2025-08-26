@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
-import '../utils/logger.dart';
 
 class AuthController extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -23,19 +22,19 @@ class AuthController extends ChangeNotifier {
     _clearError();
 
     try {
-      AppLogger.auth('Iniciando proceso de autenticación con Google...');
+      print('🔐 Iniciando proceso de autenticación con Google...');
 
       final user = await _authService.signInWithGoogle();
       _currentUser = user;
 
-      AppLogger.auth('Autenticación exitosa para: ${user.email}');
-      AppLogger.auth('Tienda: ${user.storeName}');
+      print('✅ Autenticación exitosa para: ${user.email}');
+      print('🏪 Tienda: ${user.storeName}');
 
       notifyListeners();
       return true;
     } on StoreNotFoundException catch (e) {
       _setError('Tienda no autorizada: ${e.message}');
-      AppLogger.error('Tienda no encontrada', e);
+      print('❌ Tienda no encontrada: $e');
       return false;
     } catch (e) {
       String errorMsg = 'Error al iniciar sesión';
@@ -58,7 +57,7 @@ class AuthController extends ChangeNotifier {
       }
 
       _setError(errorMsg);
-      AppLogger.error('Error en autenticación', e);
+      print('❌ Error en autenticación: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -72,10 +71,10 @@ class AuthController extends ChangeNotifier {
       _currentUser = null;
       _clearError();
 
-      AppLogger.auth('Sesión cerrada correctamente');
+      print('👋 Sesión cerrada correctamente');
       notifyListeners();
     } catch (e) {
-      AppLogger.error('Error al cerrar sesión', e);
+      print('❌ Error al cerrar sesión: $e');
       _setError('Error al cerrar sesión');
     }
   }
@@ -89,7 +88,7 @@ class AuthController extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      AppLogger.error('Error al verificar estado de autenticación', e);
+      print('❌ Error al verificar estado de autenticación: $e');
     }
   }
 

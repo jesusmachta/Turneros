@@ -251,7 +251,7 @@ class _RequestTurnViewState extends State<RequestTurnView> {
               border: Border.all(color: primaryBlue, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: primaryBlue.withValues(alpha: 0.1),
+                  color: primaryBlue.withOpacity(0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -264,7 +264,7 @@ class _RequestTurnViewState extends State<RequestTurnView> {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: primaryBlue.withValues(alpha: 0.1),
+                    color: primaryBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: ClipRRect(
