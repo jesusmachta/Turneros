@@ -13,7 +13,8 @@ class QueueController extends ChangeNotifier {
   List<QueueClientModel> _pharmacyAttending = [];
   List<QueueClientModel> _pharmaceuticalServicesWaiting = [];
   List<QueueClientModel> _pharmaceuticalServicesAttending = [];
-  List<QueueClientModel> _pickingRxClients = [];
+  List<QueueClientModel> _pickingRxPending = [];
+  List<QueueClientModel> _pickingRxPrepared = [];
 
   bool _isLoading = false;
   String? _error;
@@ -27,7 +28,8 @@ class QueueController extends ChangeNotifier {
       _pharmaceuticalServicesWaiting;
   List<QueueClientModel> get pharmaceuticalServicesAttending =>
       _pharmaceuticalServicesAttending;
-  List<QueueClientModel> get pickingRxClients => _pickingRxClients;
+  List<QueueClientModel> get pickingRxPending => _pickingRxPending;
+  List<QueueClientModel> get pickingRxPrepared => _pickingRxPrepared;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -55,7 +57,8 @@ class QueueController extends ChangeNotifier {
           queueData[QueueType.pharmaceuticalServicesWaiting] ?? [];
       _pharmaceuticalServicesAttending =
           queueData[QueueType.pharmaceuticalServicesAttending] ?? [];
-      _pickingRxClients = queueData[QueueType.pickingRx] ?? [];
+      _pickingRxPending = queueData[QueueType.pickingRxPending] ?? [];
+      _pickingRxPrepared = queueData[QueueType.pickingRxPrepared] ?? [];
 
       notifyListeners();
     } catch (e) {

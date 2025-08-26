@@ -86,5 +86,6 @@ enum QueueType {
   pharmacyAttending, // Farmacia - Siendo atendidos
   pharmaceuticalServicesWaiting, // Servicios Farmacéuticos - En espera
   pharmaceuticalServicesAttending, // Servicios Farmacéuticos - Siendo atendidos
-  pickingRx, // Picking Rx
+  pickingRxPending, // Picking Rx - Pendiente (state = 0)
+  pickingRxPrepared, // Picking Rx - Preparado (state = 1)
 }

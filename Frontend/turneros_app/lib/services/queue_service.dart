@@ -35,6 +35,10 @@ class QueueService {
   static const String _transferToServiceUrl =
       'https://transfertoservice-228344336816.us-central1.run.app';
 
+  // URL para Picking RX
+  static const String _pickingRxUrl =
+      'https://obtainpicking-228344336816.us-central1.run.app';
+
   /// Obtiene los clientes en espera en farmacia
   Future<List<QueueClientModel>> getPharmacyWaitingClients(int storeId) async {
     try {
@@ -135,6 +139,62 @@ class QueueService {
     }
   }
 
+  /// Obtiene los clientes de Picking RX pendientes (state = 0)
+  Future<List<QueueClientModel>> getPickingRxPendingClients(int storeId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_pickingRxUrl?storeid=$storeId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data
+            .map((item) => QueueClientModel.fromJson(item))
+            .where((client) => client.state == '0')
+            .toList();
+      } else if (response.statusCode == 404) {
+        // No hay clientes pendientes
+        return [];
+      } else {
+        throw Exception(
+          'Error al obtener clientes pendientes de Picking RX: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  /// Obtiene los clientes de Picking RX preparados (state = 1)
+  Future<List<QueueClientModel>> getPickingRxPreparedClients(
+    int storeId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_pickingRxUrl?storeid=$storeId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data
+            .map((item) => QueueClientModel.fromJson(item))
+            .where((client) => client.state == '1')
+            .toList();
+      } else if (response.statusCode == 404) {
+        // No hay clientes preparados
+        return [];
+      } else {
+        throw Exception(
+          'Error al obtener clientes preparados de Picking RX: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
   /// Obtiene todos los datos de las colas para un store específico
   Future<Map<QueueType, List<QueueClientModel>>> getAllQueueData(
     int storeId,
@@ -145,7 +205,8 @@ class QueueService {
         getPharmacyAttendingClients(storeId),
         getServicesWaitingClients(storeId),
         getServicesAttendingClients(storeId),
-        // Endpoint de Picking Rx no proporcionado, se devuelve lista vacía
+        getPickingRxPendingClients(storeId),
+        getPickingRxPreparedClients(storeId),
       ]);
 
       return {
@@ -153,60 +214,20 @@ class QueueService {
         QueueType.pharmacyAttending: results[1],
         QueueType.pharmaceuticalServicesWaiting: results[2],
         QueueType.pharmaceuticalServicesAttending: results[3],
-        QueueType.pickingRx: _getPickingRxMockData(),
+        QueueType.pickingRxPending: results[4],
+        QueueType.pickingRxPrepared: results[5],
       };
     } catch (e) {
-      // En caso de error, devolver listas vacías y datos de prueba para Picking RX
+      // En caso de error, devolver listas vacías
       return {
         QueueType.pharmacyWaiting: [],
         QueueType.pharmacyAttending: [],
         QueueType.pharmaceuticalServicesWaiting: [],
         QueueType.pharmaceuticalServicesAttending: [],
-        QueueType.pickingRx: _getPickingRxMockData(),
+        QueueType.pickingRxPending: [],
+        QueueType.pickingRxPrepared: [],
       };
     }
-  }
-
-  // Datos de prueba para Picking RX hasta que se proporcione el endpoint
-  List<QueueClientModel> _getPickingRxMockData() {
-    return [
-      QueueClientModel(
-        id: '1',
-        storeid: 5000,
-        comesFrom: 'PickingRx',
-        cedula: 54321,
-        documento: 'N/A',
-        country: 'N/A',
-        turn: 54321,
-        state: 'En Proceso',
-        createdAt: DateTime.now(),
-        attendedBy: 'Juan Torres',
-      ),
-      QueueClientModel(
-        id: '2',
-        storeid: 5000,
-        comesFrom: 'PickingRx',
-        cedula: 54320,
-        documento: 'N/A',
-        country: 'N/A',
-        turn: 54320,
-        state: 'Listo',
-        createdAt: DateTime.now(),
-        attendedBy: 'Maria Luna',
-      ),
-      QueueClientModel(
-        id: '3',
-        storeid: 5000,
-        comesFrom: 'PickingRx',
-        cedula: 54319,
-        documento: 'N/A',
-        country: 'N/A',
-        turn: 54319,
-        state: 'En Proceso',
-        createdAt: DateTime.now(),
-        attendedBy: 'Pedro Solis',
-      ),
-    ];
   }
 
   // ===========================================

@@ -5,7 +5,9 @@ import '../../controllers/auth_controller.dart';
 import '../../services/dashboard_service.dart';
 import '../auth/login_view.dart';
 import '../services/request_turn_view.dart';
+import '../services/services_management_view.dart';
 import '../queue/queue_view.dart';
+import '../turn_display/turn_display_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -385,7 +387,12 @@ class _HomeViewState extends State<HomeView> {
                 subtitle: 'Visualiza el estado actual de los turnos',
                 icon: Icons.tv,
                 onTap: () {
-                  // TODO: Navegar a pantalla de turnos
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TurnDisplayView(),
+                    ),
+                  );
                 },
               ),
             ),
@@ -401,9 +408,14 @@ class _HomeViewState extends State<HomeView> {
               child: _buildActionButton(
                 title: 'Gestión de servicios',
                 subtitle: 'Configura los servicios disponibles',
-                icon: Icons.settings,
+                icon: Icons.miscellaneous_services,
                 onTap: () {
-                  // TODO: Navegar a gestión de servicios
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ServicesManagementView(),
+                    ),
+                  );
                 },
               ),
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 import 'controllers/auth_controller.dart';
 import 'views/auth/login_view.dart';
@@ -39,6 +40,7 @@ class TurnerosApp extends StatelessWidget {
             primary: const Color(0xFF002858),
           ),
           useMaterial3: true,
+          textTheme: GoogleFonts.robotoTextTheme(Theme.of(context).textTheme),
           appBarTheme: const AppBarTheme(
             backgroundColor: Color(0xFF002858),
             foregroundColor: Colors.white,

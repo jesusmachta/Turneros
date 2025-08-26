@@ -4,6 +4,7 @@ import '../../controllers/queue_controller.dart';
 import '../../models/queue_client_model.dart';
 import '../../models/service_model.dart';
 import '../../controllers/auth_controller.dart';
+import '../../services/audio_service.dart';
 
 class QueueView extends StatefulWidget {
   const QueueView({super.key});
@@ -14,6 +15,7 @@ class QueueView extends StatefulWidget {
 
 class _QueueViewState extends State<QueueView> {
   late QueueController _queueController;
+  final AudioService _audioService = AudioService();
 
   // Colores del sistema (azul oscuro principal)
   static const Color primaryDarkBlue = Color(0xFF002858);
@@ -24,6 +26,19 @@ class _QueueViewState extends State<QueueView> {
   static const Color waitingOrange = Color(0xFFFF9800);
   static const Color textDark = Color(0xFF212121);
   static const Color textGray = Color(0xFF757575);
+  // Colores específicos para Picking RX
+  static const Color pickingPreparedTeal = Color(
+    0xFF00a19a,
+  ); // Verde azulado para Preparado
+  static const Color pickingPendingYellow = Color(
+    0xFFa1ac00,
+  ); // Amarillo verdoso para Pendiente
+  static const Color lightTeal = Color(
+    0xFFE0F2F1,
+  ); // Verde azulado claro para fondo
+  static const Color lightYellow = Color(
+    0xFFF9FBE7,
+  ); // Amarillo verdoso claro para fondo
 
   @override
   void initState() {
@@ -42,6 +57,7 @@ class _QueueViewState extends State<QueueView> {
   @override
   void dispose() {
     _queueController.dispose();
+    _audioService.dispose();
     super.dispose();
   }
 
@@ -117,8 +133,11 @@ class _QueueViewState extends State<QueueView> {
                             // Picking Rx Section
                             SizedBox(
                               height: 400,
-                              child: _buildPickingRxSection(
-                                controller.pickingRxClients,
+                              child: _buildSectionCard(
+                                'Picking Rx',
+                                controller.pickingRxPrepared,
+                                controller.pickingRxPending,
+                                isPickingRx: true,
                               ),
                             ),
                           ],
@@ -162,8 +181,11 @@ class _QueueViewState extends State<QueueView> {
                           Expanded(
                             child: SizedBox(
                               height: constraints.maxHeight - 32,
-                              child: _buildPickingRxSection(
-                                controller.pickingRxClients,
+                              child: _buildSectionCard(
+                                'Picking Rx',
+                                controller.pickingRxPrepared,
+                                controller.pickingRxPending,
+                                isPickingRx: true,
                               ),
                             ),
                           ),
@@ -183,8 +205,9 @@ class _QueueViewState extends State<QueueView> {
   Widget _buildSectionCard(
     String title,
     List<QueueClientModel> attending,
-    List<QueueClientModel> waiting,
-  ) {
+    List<QueueClientModel> waiting, {
+    bool isPickingRx = false,
+  }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -211,6 +234,8 @@ class _QueueViewState extends State<QueueView> {
                     Icon(
                       title == 'Farmacia'
                           ? Icons.local_pharmacy_outlined
+                          : title == 'Picking Rx'
+                          ? Icons.receipt_long_outlined
                           : Icons.medical_services_outlined,
                       color: textDark,
                       size: isSmall ? 18 : 24,
@@ -240,21 +265,23 @@ class _QueueViewState extends State<QueueView> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Columna Atendiendo
+                  // Columna izquierda (Preparado/Atendiendo)
                   Expanded(
                     child: _buildQueueList(
-                      'Atendiendo',
+                      isPickingRx ? 'Preparado' : 'Atendiendo',
                       attending,
-                      isAttending: true,
+                      isAttending: !isPickingRx,
+                      isPrepared: isPickingRx,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Columna En Espera
+                  // Columna derecha (Pendiente/En Espera)
                   Expanded(
                     child: _buildQueueList(
-                      'En Espera',
+                      isPickingRx ? 'Pendiente' : 'En Espera',
                       waiting,
                       isAttending: false,
+                      isPending: isPickingRx,
                     ),
                   ),
                 ],
@@ -270,6 +297,8 @@ class _QueueViewState extends State<QueueView> {
     String title,
     List<QueueClientModel> clients, {
     required bool isAttending,
+    bool isPrepared = false,
+    bool isPending = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,8 +306,21 @@ class _QueueViewState extends State<QueueView> {
         Row(
           children: [
             Icon(
-              isAttending ? Icons.support_agent : Icons.hourglass_empty,
-              color: isAttending ? attendingGreen : waitingOrange,
+              isPrepared
+                  ? Icons.check_circle_outline
+                  : isPending
+                  ? Icons.schedule
+                  : isAttending
+                  ? Icons.support_agent
+                  : Icons.hourglass_empty,
+              color:
+                  isPrepared
+                      ? pickingPreparedTeal
+                      : isPending
+                      ? pickingPendingYellow
+                      : isAttending
+                      ? attendingGreen
+                      : waitingOrange,
               size: 16,
             ),
             const SizedBox(width: 4),
@@ -313,12 +355,16 @@ class _QueueViewState extends State<QueueView> {
         Expanded(
           child:
               clients.isEmpty
-                  ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24.0),
+                  ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24.0),
                     child: Center(
                       child: Text(
-                        'Sin clientes',
-                        style: TextStyle(color: textGray),
+                        isPrepared
+                            ? 'No hay órdenes preparadas'
+                            : isPending
+                            ? 'No hay órdenes pendientes'
+                            : 'Sin clientes',
+                        style: const TextStyle(color: textGray),
                       ),
                     ),
                   )
@@ -327,7 +373,12 @@ class _QueueViewState extends State<QueueView> {
                     separatorBuilder:
                         (context, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
-                      return _buildClientCard(clients[index], isAttending);
+                      return _buildClientCard(
+                        clients[index],
+                        isAttending,
+                        isPrepared: isPrepared,
+                        isPending: isPending,
+                      );
                     },
                   ),
         ),
@@ -335,15 +386,34 @@ class _QueueViewState extends State<QueueView> {
     );
   }
 
-  Widget _buildClientCard(QueueClientModel client, bool isAttending) {
+  Widget _buildClientCard(
+    QueueClientModel client,
+    bool isAttending, {
+    bool isPrepared = false,
+    bool isPending = false,
+  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isAttending ? lightGreen : cardWhite,
+        color:
+            isPrepared
+                ? lightTeal
+                : isPending
+                ? lightYellow
+                : isAttending
+                ? lightGreen
+                : cardWhite,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isAttending ? attendingGreen : Colors.grey[300]!,
-          width: isAttending ? 2 : 1,
+          color:
+              isPrepared
+                  ? pickingPreparedTeal
+                  : isPending
+                  ? pickingPendingYellow
+                  : isAttending
+                  ? attendingGreen
+                  : Colors.grey[300]!,
+          width: (isPrepared || isPending || isAttending) ? 2 : 1,
         ),
       ),
       child: Column(
@@ -380,7 +450,9 @@ class _QueueViewState extends State<QueueView> {
               ),
             ),
           const SizedBox(height: 12),
-          _buildActionButtons(client, isAttending),
+          // Solo mostrar botones de acción para farmacia y servicios, no para Picking RX
+          if (!isPrepared && !isPending)
+            _buildActionButtons(client, isAttending),
         ],
       ),
     );
@@ -549,150 +621,6 @@ class _QueueViewState extends State<QueueView> {
     );
   }
 
-  Widget _buildPickingRxSection(List<QueueClientModel> clients) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: cardWhite,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isSmall = constraints.maxWidth < 200;
-                return Row(
-                  children: [
-                    Icon(
-                      Icons.receipt_long_outlined,
-                      color: textDark,
-                      size: isSmall ? 18 : 24,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Picking Rx',
-                        style: TextStyle(
-                          fontSize: isSmall ? 14 : 18,
-                          fontWeight: FontWeight.bold,
-                          color: textDark,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${clients.length}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: textDark,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          Expanded(
-            child:
-                clients.isEmpty
-                    ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24.0),
-                      child: Center(
-                        child: Text(
-                          'No hay órdenes de Picking Rx.',
-                          style: TextStyle(color: textGray),
-                        ),
-                      ),
-                    )
-                    : ListView.separated(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      itemCount: clients.length,
-                      separatorBuilder:
-                          (context, index) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        return _buildPickingRxCard(clients[index]);
-                      },
-                    ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPickingRxCard(QueueClientModel client) {
-    final isReady = client.state == 'Listo';
-    final statusColor = isReady ? Colors.blue : Colors.orange;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: cardWhite,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '#${client.cedula}', // Usando cédula como número de orden
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: textDark,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                client.attendedBy ?? 'N/A', // Usando attendedBy como nombre
-                style: const TextStyle(color: textGray, fontSize: 14),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              client.state,
-              style: TextStyle(
-                color: statusColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ===========================================
   // MÉTODOS MANEJADORES DE ACCIONES
   // ===========================================
@@ -700,6 +628,9 @@ class _QueueViewState extends State<QueueView> {
   /// Maneja la acción de atender un cliente
   void _handleAttendAction(QueueClientModel client, bool isPharmacy) async {
     try {
+      // Reproducir sonido de timbre para atender
+      _audioService.playAttendSound();
+
       if (isPharmacy) {
         await _queueController.startAttendingPharmacy(client);
         _showAttendToast(true);
@@ -715,6 +646,9 @@ class _QueueViewState extends State<QueueView> {
   /// Maneja la acción de finalizar atención
   void _handleFinishAction(QueueClientModel client, bool isPharmacy) async {
     try {
+      // Reproducir sonido de timbre
+      _audioService.playAttendSound();
+
       if (isPharmacy) {
         await _queueController.finishAttendingPharmacy(client);
         _showFinishToast(true);
