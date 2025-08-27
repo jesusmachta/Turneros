@@ -1,14 +1,17 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/turn_model.dart';
 import '../services/turn_display_service.dart';
 import '../services/audio_service.dart';
 
-/// Controlador para manejar el estado de la pantalla de turnos
+/// Controlador para manejar el estado de la pantalla de turnos usando streams
 class TurnDisplayController extends ChangeNotifier {
   final TurnDisplayService _turnDisplayService = TurnDisplayService();
   final AudioService _audioService = AudioService();
 
-  bool _soundPlayedInCycle = false;
+  // Subscripciones a los streams
+  StreamSubscription<TurnScreenData>? _pharmacySubscription;
+  StreamSubscription<TurnScreenData>? _servicesSubscription;
 
   // Estado para Farmacia
   TurnScreenData _pharmacyData = TurnScreenData.empty();
@@ -19,6 +22,9 @@ class TurnDisplayController extends ChangeNotifier {
   TurnScreenData _servicesData = TurnScreenData.empty();
   bool _isLoadingServices = false;
   String? _servicesError;
+
+  // Store ID actual
+  int? _currentStoreId;
 
   // Getters para Farmacia
   TurnScreenData get pharmacyData => _pharmacyData;
@@ -33,77 +39,120 @@ class TurnDisplayController extends ChangeNotifier {
   // Getter para saber si está cargando algún dato
   bool get isLoading => _isLoadingPharmacy || _isLoadingServices;
 
-  /// Carga los datos de turnos para ambas secciones
-  Future<void> loadAllTurnsData(int storeId) async {
-    print('🔄 Cargando datos de turnos para store ID: $storeId');
-    _soundPlayedInCycle = false; // Reset flag at the start of refresh cycle
+  /// Inicia los streams de datos para ambas secciones
+  void startListening(int storeId) {
+    print('🔄 Iniciando listeners de turnos para store ID: $storeId');
 
-    // Cargar ambos en paralelo
-    await Future.wait([loadPharmacyData(storeId), loadServicesData(storeId)]);
-  }
-
-  /// Carga los datos de turnos para Farmacia
-  Future<void> loadPharmacyData(int storeId) async {
-    try {
-      _isLoadingPharmacy = true;
-      _pharmacyError = null;
-      notifyListeners();
-
-      print('🏥 Cargando datos de Farmacia...');
-      final data = await _turnDisplayService.getPharmacyTurns(storeId);
-
-      if (_pharmacyData != data) {
-        if (!_soundPlayedInCycle) {
-          _audioService.playAttendSound();
-          _soundPlayedInCycle = true;
-        }
-        _pharmacyData = data;
-      }
-      print('✅ Datos de Farmacia cargados exitosamente');
-    } catch (e) {
-      _pharmacyError = e.toString();
-      print('❌ Error cargando datos de Farmacia: $e');
-    } finally {
-      _isLoadingPharmacy = false;
-      notifyListeners();
+    // Si ya estamos escuchando el mismo store, no hacer nada
+    if (_currentStoreId == storeId &&
+        _pharmacySubscription != null &&
+        _servicesSubscription != null) {
+      return;
     }
+
+    // Detener listeners previos si existen
+    stopListening();
+
+    _currentStoreId = storeId;
+    _isLoadingPharmacy = true;
+    _isLoadingServices = true;
+    notifyListeners();
+
+    // Iniciar listener para Farmacia
+    _startPharmacyListener(storeId);
+
+    // Iniciar listener para Servicios
+    _startServicesListener(storeId);
   }
 
-  /// Carga los datos de turnos para Servicios Farmacéuticos
-  Future<void> loadServicesData(int storeId) async {
-    try {
-      _isLoadingServices = true;
-      _servicesError = null;
-      notifyListeners();
+  /// Inicia el listener para los datos de Farmacia
+  void _startPharmacyListener(int storeId) {
+    print('🏥 Iniciando listener de Farmacia...');
 
-      print('💊 Cargando datos de Servicios...');
-      final data = await _turnDisplayService.getServicesTurns(storeId);
+    _pharmacySubscription = _turnDisplayService
+        .getPharmacyTurnsStream(storeId)
+        .listen(
+          (data) {
+            _isLoadingPharmacy = false;
+            _pharmacyError = null;
 
-      if (_servicesData != data) {
-        if (!_soundPlayedInCycle) {
-          _audioService.playAttendSound();
-          _soundPlayedInCycle = true;
-        }
-        _servicesData = data;
-      }
-      print('✅ Datos de Servicios cargados exitosamente');
-    } catch (e) {
-      _servicesError = e.toString();
-      print('❌ Error cargando datos de Servicios: $e');
-    } finally {
-      _isLoadingServices = false;
-      notifyListeners();
+            // Solo reproducir sonido si hay cambios significativos
+            if (_hasSignificantChange(_pharmacyData, data)) {
+              _audioService.playAttendSound();
+            }
+
+            _pharmacyData = data;
+            notifyListeners();
+            print('✅ Datos de Farmacia actualizados en tiempo real');
+          },
+          onError: (error) {
+            _isLoadingPharmacy = false;
+            _pharmacyError = error.toString();
+            notifyListeners();
+            print('❌ Error en listener de Farmacia: $error');
+          },
+        );
+  }
+
+  /// Inicia el listener para los datos de Servicios
+  void _startServicesListener(int storeId) {
+    print('💊 Iniciando listener de Servicios...');
+
+    _servicesSubscription = _turnDisplayService
+        .getServicesTurnsStream(storeId)
+        .listen(
+          (data) {
+            _isLoadingServices = false;
+            _servicesError = null;
+
+            // Solo reproducir sonido si hay cambios significativos
+            if (_hasSignificantChange(_servicesData, data)) {
+              _audioService.playAttendSound();
+            }
+
+            _servicesData = data;
+            notifyListeners();
+            print('✅ Datos de Servicios actualizados en tiempo real');
+          },
+          onError: (error) {
+            _isLoadingServices = false;
+            _servicesError = error.toString();
+            notifyListeners();
+            print('❌ Error en listener de Servicios: $error');
+          },
+        );
+  }
+
+  /// Verifica si hay cambios significativos que justifiquen reproducir sonido
+  bool _hasSignificantChange(TurnScreenData oldData, TurnScreenData newData) {
+    // Cambio en el turno que se está atendiendo
+    if (oldData.currentlyBeingServed?.id != newData.currentlyBeingServed?.id) {
+      return true;
     }
+
+    // Cambio en la cantidad de turnos en espera (nuevo turno agregado)
+    if (newData.waitingQueue.length > oldData.waitingQueue.length) {
+      return true;
+    }
+
+    return false;
   }
 
-  /// Refresca todos los datos
-  Future<void> refreshData(int storeId) async {
-    print('🔄 Refrescando todos los datos de turnos...');
-    await loadAllTurnsData(storeId);
+  /// Detiene todos los listeners activos
+  void stopListening() {
+    _pharmacySubscription?.cancel();
+    _pharmacySubscription = null;
+
+    _servicesSubscription?.cancel();
+    _servicesSubscription = null;
+
+    _currentStoreId = null;
+    print('🛑 Listeners detenidos');
   }
 
-  /// Limpia todos los datos
+  /// Limpia todos los datos y detiene listeners
   void clearData() {
+    stopListening();
     _pharmacyData = TurnScreenData.empty();
     _servicesData = TurnScreenData.empty();
     _isLoadingPharmacy = false;
@@ -139,5 +188,12 @@ class TurnDisplayController extends ChangeNotifier {
         .take(5) // Mostrar máximo 5 turnos siguientes
         .map((turn) => 'S${turn.turn}')
         .toList();
+  }
+
+  @override
+  void dispose() {
+    stopListening();
+    _turnDisplayService.dispose();
+    super.dispose();
   }
 }

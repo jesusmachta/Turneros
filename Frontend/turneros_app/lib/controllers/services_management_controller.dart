@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/service_model.dart';
 import '../services/services_management_api_service.dart';
@@ -9,6 +10,8 @@ class ServicesManagementController extends ChangeNotifier {
   List<ServiceModel> _services = [];
   bool _isLoading = false;
   String? _errorMessage;
+  StreamSubscription<List<ServiceModel>>? _servicesSubscription;
+  String? _currentStoreId;
 
   // Getters
   List<ServiceModel> get services => _services;
@@ -29,43 +32,59 @@ class ServicesManagementController extends ChangeNotifier {
   List<ServiceModel> get servicesWithScreen =>
       _services.where((service) => service.screen).toList();
 
-  /// Carga todos los servicios para una tienda específica
-  Future<void> loadServices(String storeId) async {
+  /// Inicia la escucha de servicios usando streams
+  void startListening(String storeId) {
     if (storeId.isEmpty) {
       _setError('ID de tienda no válido');
       return;
     }
 
+    // Si ya estamos escuchando el mismo store, no hacer nada
+    if (_currentStoreId == storeId && _servicesSubscription != null) {
+      return;
+    }
+
+    // Detener listener previo si existe
+    stopListening();
+
+    _currentStoreId = storeId;
     _setLoading(true);
     _clearError();
 
-    try {
-      print('🔄 Cargando servicios para tienda: $storeId');
+    print('🚀 Iniciando listener de servicios para tienda: $storeId');
 
-      final services = await _apiService.getAllServices(storeId);
-      _services = services;
+    // Configurar el listener del stream
+    _servicesSubscription = _apiService
+        .getAllServicesStream(storeId)
+        .listen(
+          (services) {
+            _services = services;
+            _setLoading(false);
+            notifyListeners();
+            print(
+              '✅ Servicios actualizados: ${services.length} servicios tipo "Servicio"',
+            );
+          },
+          onError: (error) {
+            print('❌ Error en listener de servicios: $error');
+            _setError('Error al cargar servicios: $error');
+            _setLoading(false);
+          },
+        );
+  }
 
-      print('✅ Servicios cargados exitosamente: ${services.length} servicios');
+  /// Detiene el listener activo
+  void stopListening() {
+    _servicesSubscription?.cancel();
+    _servicesSubscription = null;
+    _currentStoreId = null;
+    print('🛑 Listener de servicios detenido');
+  }
 
-      notifyListeners();
-    } catch (e) {
-      String errorMsg = 'Error al cargar servicios';
-
-      if (e.toString().contains('Sin conexión a internet')) {
-        errorMsg = 'Sin conexión a internet. Verifique su conexión';
-      } else if (e.toString().contains('Tiempo de espera agotado')) {
-        errorMsg = 'Tiempo de espera agotado. Intente nuevamente';
-      } else if (e.toString().contains('No se encontraron servicios')) {
-        errorMsg = 'No hay servicios disponibles para esta tienda';
-      } else if (e.toString().contains('Error del servidor')) {
-        errorMsg = 'Error del servidor. Intente más tarde';
-      }
-
-      _setError(errorMsg);
-      print('❌ Error al cargar servicios: $e');
-    } finally {
-      _setLoading(false);
-    }
+  /// Método legacy - Carga todos los servicios para una tienda específica
+  Future<void> loadServices(String storeId) async {
+    print('⚠️ Método loadServices() legacy - reiniciando listeners');
+    startListening(storeId);
   }
 
   /// Actualiza un servicio existente
@@ -247,6 +266,8 @@ class ServicesManagementController extends ChangeNotifier {
 
   @override
   void dispose() {
+    stopListening();
+    _apiService.dispose();
     clear();
     super.dispose();
   }

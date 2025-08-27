@@ -137,7 +137,7 @@ class _DocumentInputViewState extends State<DocumentInputView> {
     try {
       // Preparar datos para la API
       final int cedula = int.parse(_documentNumber);
-      final String documento = '$_selectedDocumentType-$_documentNumber';
+      final String documento = _selectedDocumentType!;
 
       // Llamar a la API
       final result = await _turnApiService.createTurn(
@@ -194,7 +194,7 @@ class _DocumentInputViewState extends State<DocumentInputView> {
                 const SizedBox(height: 16),
                 Text('Servicio: ${widget.service.name}'),
                 Text('Tipo: ${widget.service.type}'),
-                Text('Documento: $_selectedDocumentType-$_documentNumber'),
+                Text('Documento: $_selectedDocumentType'),
                 if (turnData['turnNumber'] != null)
                   Text('Número de turno: ${turnData['turnNumber']}'),
                 if (turnData['estimatedTime'] != null)

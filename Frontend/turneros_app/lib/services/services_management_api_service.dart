@@ -1,8 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import '../models/service_model.dart';
 
 class ServicesManagementApiService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // StreamControllers para manejar los streams de servicios
+  final Map<String, StreamController<List<ServiceModel>>> _controllers = {};
+
+  // Referencias a los listeners para poder cancelarlos
+  final Map<String, StreamSubscription> _listeners = {};
+
+  // URLs para las acciones POST (mantenemos estas)
   static const String _baseUrl =
       'https://getallonlyservices-228344336816.us-central1.run.app';
 
@@ -76,7 +87,78 @@ class ServicesManagementApiService {
     }
   }
 
-  /// Obtiene todos los servicios disponibles para una tienda
+  /// Obtiene un stream de todos los servicios tipo 'Servicio' desde Firestore
+  Stream<List<ServiceModel>> getAllServicesStream(String storeId) {
+    final controllerKey = 'all_services_$storeId';
+
+    // Si ya existe un controller para este store, lo retornamos
+    if (_controllers.containsKey(controllerKey)) {
+      return _controllers[controllerKey]!.stream;
+    }
+
+    // Crear nuevo controller
+    final controller = StreamController<List<ServiceModel>>.broadcast();
+    _controllers[controllerKey] = controller;
+
+    // Configurar el listener de Firestore
+    final listener = _firestore
+        .collection('Turns_Store')
+        .doc(storeId)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            try {
+              if (!snapshot.exists) {
+                if (!controller.isClosed) {
+                  controller.add([]);
+                }
+                return;
+              }
+
+              final storeData = snapshot.data();
+              final allServices =
+                  storeData?['services'] as List<dynamic>? ?? [];
+
+              // Filtrar solo servicios de tipo 'Servicio' (como en tu Cloud Function)
+              final filteredServices =
+                  allServices
+                      .where((service) => service['type'] == 'Servicio')
+                      .map(
+                        (service) => ServiceModel.fromFirestore(
+                          service as Map<String, dynamic>,
+                        ),
+                      )
+                      .toList();
+
+              if (!controller.isClosed) {
+                controller.add(filteredServices);
+              }
+
+              print(
+                '✅ Servicios tipo "Servicio": ${filteredServices.length} para store $storeId',
+              );
+            } catch (e) {
+              print('❌ Error procesando servicios: $e');
+              if (!controller.isClosed) {
+                controller.addError(e);
+              }
+            }
+          },
+          onError: (error) {
+            print('❌ Error en listener de servicios: $error');
+            if (!controller.isClosed) {
+              controller.addError(error);
+            }
+          },
+        );
+
+    // Guardar referencia al listener
+    _listeners[controllerKey] = listener;
+
+    return controller.stream;
+  }
+
+  /// Método legacy - Obtiene todos los servicios disponibles para una tienda
   Future<List<ServiceModel>> getAllServices(String storeId) async {
     try {
       final uri = Uri.parse('$_baseUrl?storeid=$storeId');
@@ -138,6 +220,38 @@ class ServicesManagementApiService {
       }
 
       throw Exception('Error al obtener servicios: ${e.toString()}');
+    }
+  }
+
+  /// Cancela todos los listeners y libera recursos
+  void dispose() {
+    print('🧹 Liberando recursos de ServicesManagementApiService');
+
+    // Cancelar todos los listeners
+    for (final listener in _listeners.values) {
+      listener.cancel();
+    }
+    _listeners.clear();
+
+    // Cerrar todos los controllers
+    for (final controller in _controllers.values) {
+      if (!controller.isClosed) {
+        controller.close();
+      }
+    }
+    _controllers.clear();
+  }
+
+  /// Cancela listeners específicos para un store
+  void disposeStore(String storeId) {
+    final controllerKey = 'all_services_$storeId';
+
+    _listeners[controllerKey]?.cancel();
+    _listeners.remove(controllerKey);
+
+    final controller = _controllers.remove(controllerKey);
+    if (controller != null && !controller.isClosed) {
+      controller.close();
     }
   }
 }

@@ -43,6 +43,56 @@ class TurnModel {
     );
   }
 
+  /// Crea un turno desde datos de Firestore
+  factory TurnModel.fromFirestore(Map<String, dynamic> data) {
+    return TurnModel(
+      id: data['id'] ?? '',
+      storeId: data['storeid'] ?? 0,
+      comesFrom: data['comes_from'] ?? '',
+      cedula: data['cedula'] ?? 0,
+      documento: data['documento'] ?? '',
+      country: data['country'] ?? '',
+      turn: data['Turn'] ?? 0,
+      state: data['state'] ?? '',
+      createdAt: _parseFirestoreTimestamp(data['Created_At']),
+      servedAt:
+          data['Served_At'] != null
+              ? _parseFirestoreTimestamp(data['Served_At'])
+              : null,
+    );
+  }
+
+  /// Convierte un Timestamp de Firestore a DateTime
+  static DateTime _parseFirestoreTimestamp(dynamic timestamp) {
+    if (timestamp == null) {
+      return DateTime.now();
+    }
+
+    // Si es un Timestamp de Firestore
+    if (timestamp.runtimeType.toString().contains('Timestamp')) {
+      return timestamp.toDate();
+    }
+
+    // Si es un String (formato ISO)
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    }
+
+    // Si es un Map con _seconds y _nanoseconds (formato serializado de Timestamp)
+    if (timestamp is Map<String, dynamic>) {
+      if (timestamp.containsKey('_seconds')) {
+        final seconds = timestamp['_seconds'];
+        final nanoseconds = timestamp['_nanoseconds'] ?? 0;
+        return DateTime.fromMillisecondsSinceEpoch(
+          seconds * 1000 + (nanoseconds / 1000000).round(),
+        );
+      }
+    }
+
+    // Fallback
+    return DateTime.now();
+  }
+
   /// Convierte a Map para JSON
   Map<String, dynamic> toJson() {
     return {

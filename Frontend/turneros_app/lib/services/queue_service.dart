@@ -1,21 +1,21 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import '../models/queue_client_model.dart';
 import '../models/service_model.dart';
 
-/// Servicio para manejar las operaciones de las colas con el backend
+/// Servicio para manejar las operaciones de las colas usando Firestore real-time
 class QueueService {
-  // URLs de los endpoints reales
-  static const String _pharmacyWaitingUrl =
-      'https://waitingpharmacy-228344336816.us-central1.run.app/';
-  static const String _pharmacyAttendingUrl =
-      'https://attendigpharmacy-228344336816.us-central1.run.app/';
-  static const String _servicesWaitingUrl =
-      'https://waitinginservices-228344336816.us-central1.run.app/';
-  static const String _servicesAttendingUrl =
-      'https://attendingservices-228344336816.us-central1.run.app/';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // URLs para las acciones de los botones
+  // StreamControllers para manejar los streams de datos de cada cola
+  final Map<String, StreamController<List<QueueClientModel>>> _controllers = {};
+
+  // Referencias a los listeners para poder cancelarlos
+  final Map<String, List<StreamSubscription>> _listeners = {};
+
+  // URLs para las acciones de los botones (mantenemos estas para las acciones POST)
   static const String _startAttendingPharmacyUrl =
       'https://startattendingpharmacy-228344336816.us-central1.run.app';
   static const String _startAttendingServiceUrl =
@@ -35,199 +35,196 @@ class QueueService {
   static const String _transferToServiceUrl =
       'https://transfertoservice-228344336816.us-central1.run.app';
 
-  // URL para Picking RX
-  static const String _pickingRxUrl =
-      'https://obtainpicking-228344336816.us-central1.run.app';
-
-  /// Obtiene los clientes en espera en farmacia
-  Future<List<QueueClientModel>> getPharmacyWaitingClients(int storeId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_pharmacyWaitingUrl?storeid=$storeId'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => QueueClientModel.fromJson(item)).toList();
-      } else if (response.statusCode == 404) {
-        // No hay clientes en espera
-        return [];
-      } else {
-        throw Exception(
-          'Error al obtener clientes en espera de farmacia: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
+  /// Obtiene un stream de clientes en espera en farmacia
+  Stream<List<QueueClientModel>> getPharmacyWaitingClientsStream(int storeId) {
+    return _getClientsStream(
+      storeId,
+      'Turns_Pharmacy',
+      'Esperando',
+      'pharmacy_waiting_$storeId',
+    );
   }
 
-  /// Obtiene los clientes siendo atendidos en farmacia
-  Future<List<QueueClientModel>> getPharmacyAttendingClients(
+  /// Obtiene un stream de clientes siendo atendidos en farmacia
+  Stream<List<QueueClientModel>> getPharmacyAttendingClientsStream(
     int storeId,
-  ) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_pharmacyAttendingUrl?storeid=$storeId'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => QueueClientModel.fromJson(item)).toList();
-      } else if (response.statusCode == 404) {
-        // No hay clientes siendo atendidos
-        return [];
-      } else {
-        throw Exception(
-          'Error al obtener clientes siendo atendidos en farmacia: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
+  ) {
+    return _getClientsStream(
+      storeId,
+      'Turns_Pharmacy',
+      'Atendiendo',
+      'pharmacy_attending_$storeId',
+    );
   }
 
-  /// Obtiene los clientes en espera en servicios farmacéuticos
-  Future<List<QueueClientModel>> getServicesWaitingClients(int storeId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_servicesWaitingUrl?storeid=$storeId'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => QueueClientModel.fromJson(item)).toList();
-      } else if (response.statusCode == 404) {
-        // No hay clientes en espera
-        return [];
-      } else {
-        throw Exception(
-          'Error al obtener clientes en espera de servicios: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
+  /// Obtiene un stream de clientes en espera en servicios farmacéuticos
+  Stream<List<QueueClientModel>> getServicesWaitingClientsStream(int storeId) {
+    return _getClientsStream(
+      storeId,
+      'Turns_Services',
+      'Esperando',
+      'services_waiting_$storeId',
+    );
   }
 
-  /// Obtiene los clientes siendo atendidos en servicios farmacéuticos
-  Future<List<QueueClientModel>> getServicesAttendingClients(
+  /// Obtiene un stream de clientes siendo atendidos en servicios farmacéuticos
+  Stream<List<QueueClientModel>> getServicesAttendingClientsStream(
     int storeId,
-  ) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_servicesAttendingUrl?storeid=$storeId'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => QueueClientModel.fromJson(item)).toList();
-      } else if (response.statusCode == 404) {
-        // No hay clientes siendo atendidos
-        return [];
-      } else {
-        throw Exception(
-          'Error al obtener clientes siendo atendidos en servicios: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
+  ) {
+    return _getClientsStream(
+      storeId,
+      'Turns_Services',
+      'Atendiendo',
+      'services_attending_$storeId',
+    );
   }
 
-  /// Obtiene los clientes de Picking RX pendientes (state = 0)
-  Future<List<QueueClientModel>> getPickingRxPendingClients(int storeId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_pickingRxUrl?storeid=$storeId'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data
-            .map((item) => QueueClientModel.fromJson(item))
-            .where((client) => client.state == '0')
-            .toList();
-      } else if (response.statusCode == 404) {
-        // No hay clientes pendientes
-        return [];
-      } else {
-        throw Exception(
-          'Error al obtener clientes pendientes de Picking RX: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
+  /// Obtiene un stream de clientes de Picking RX pendientes (state = 0)
+  Stream<List<QueueClientModel>> getPickingRxPendingClientsStream(int storeId) {
+    return _getPickingRxClientsStream(storeId, 0, 'picking_pending_$storeId');
   }
 
-  /// Obtiene los clientes de Picking RX preparados (state = 1)
-  Future<List<QueueClientModel>> getPickingRxPreparedClients(
+  /// Obtiene un stream de clientes de Picking RX preparados (state = 1)
+  Stream<List<QueueClientModel>> getPickingRxPreparedClientsStream(
     int storeId,
-  ) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_pickingRxUrl?storeid=$storeId'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data
-            .map((item) => QueueClientModel.fromJson(item))
-            .where((client) => client.state == '1')
-            .toList();
-      } else if (response.statusCode == 404) {
-        // No hay clientes preparados
-        return [];
-      } else {
-        throw Exception(
-          'Error al obtener clientes preparados de Picking RX: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
+  ) {
+    return _getPickingRxClientsStream(storeId, 1, 'picking_prepared_$storeId');
   }
 
-  /// Obtiene todos los datos de las colas para un store específico
-  Future<Map<QueueType, List<QueueClientModel>>> getAllQueueData(
+  /// Obtiene todos los streams de las colas para un store específico
+  Map<QueueType, Stream<List<QueueClientModel>>> getAllQueueStreams(
     int storeId,
-  ) async {
-    try {
-      final results = await Future.wait([
-        getPharmacyWaitingClients(storeId),
-        getPharmacyAttendingClients(storeId),
-        getServicesWaitingClients(storeId),
-        getServicesAttendingClients(storeId),
-        getPickingRxPendingClients(storeId),
-        getPickingRxPreparedClients(storeId),
-      ]);
+  ) {
+    return {
+      QueueType.pharmacyWaiting: getPharmacyWaitingClientsStream(storeId),
+      QueueType.pharmacyAttending: getPharmacyAttendingClientsStream(storeId),
+      QueueType.pharmaceuticalServicesWaiting: getServicesWaitingClientsStream(
+        storeId,
+      ),
+      QueueType.pharmaceuticalServicesAttending:
+          getServicesAttendingClientsStream(storeId),
+      QueueType.pickingRxPending: getPickingRxPendingClientsStream(storeId),
+      QueueType.pickingRxPrepared: getPickingRxPreparedClientsStream(storeId),
+    };
+  }
 
-      return {
-        QueueType.pharmacyWaiting: results[0],
-        QueueType.pharmacyAttending: results[1],
-        QueueType.pharmaceuticalServicesWaiting: results[2],
-        QueueType.pharmaceuticalServicesAttending: results[3],
-        QueueType.pickingRxPending: results[4],
-        QueueType.pickingRxPrepared: results[5],
-      };
-    } catch (e) {
-      // En caso de error, devolver listas vacías
-      return {
-        QueueType.pharmacyWaiting: [],
-        QueueType.pharmacyAttending: [],
-        QueueType.pharmaceuticalServicesWaiting: [],
-        QueueType.pharmaceuticalServicesAttending: [],
-        QueueType.pickingRxPending: [],
-        QueueType.pickingRxPrepared: [],
-      };
+  /// Método helper para crear streams de clientes desde Firestore
+  Stream<List<QueueClientModel>> _getClientsStream(
+    int storeId,
+    String collection,
+    String state,
+    String controllerKey,
+  ) {
+    // Si ya existe un controller para esta consulta, lo retornamos
+    if (_controllers.containsKey(controllerKey)) {
+      return _controllers[controllerKey]!.stream;
     }
+
+    // Crear nuevo controller
+    final controller = StreamController<List<QueueClientModel>>.broadcast();
+    _controllers[controllerKey] = controller;
+
+    // Configurar el listener de Firestore
+    final listener = _firestore
+        .collection('Turns_Store')
+        .doc(storeId.toString())
+        .collection(collection)
+        .where('state', isEqualTo: state)
+        .orderBy('Created_At', descending: false)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            try {
+              final clients =
+                  snapshot.docs.map((doc) {
+                    final data = doc.data();
+                    data['id'] = doc.id;
+                    return QueueClientModel.fromFirestore(data);
+                  }).toList();
+
+              if (!controller.isClosed) {
+                controller.add(clients);
+              }
+
+              print('✅ $collection ($state): ${clients.length} clientes');
+            } catch (e) {
+              print('❌ Error procesando $collection ($state): $e');
+              if (!controller.isClosed) {
+                controller.addError(e);
+              }
+            }
+          },
+          onError: (error) {
+            print('❌ Error en listener $collection ($state): $error');
+            if (!controller.isClosed) {
+              controller.addError(error);
+            }
+          },
+        );
+
+    // Guardar referencia al listener
+    _listeners[controllerKey] = [listener];
+
+    return controller.stream;
+  }
+
+  /// Método helper para crear streams de Picking RX desde Firestore
+  Stream<List<QueueClientModel>> _getPickingRxClientsStream(
+    int storeId,
+    int state,
+    String controllerKey,
+  ) {
+    // Si ya existe un controller para esta consulta, lo retornamos
+    if (_controllers.containsKey(controllerKey)) {
+      return _controllers[controllerKey]!.stream;
+    }
+
+    // Crear nuevo controller
+    final controller = StreamController<List<QueueClientModel>>.broadcast();
+    _controllers[controllerKey] = controller;
+
+    // Configurar el listener de Firestore
+    final listener = _firestore
+        .collection('Turns_Store')
+        .doc(storeId.toString())
+        .collection('Turns_PickingRX')
+        .where('state', isEqualTo: state)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            try {
+              final clients =
+                  snapshot.docs.map((doc) {
+                    final data = doc.data();
+                    data['id'] = doc.id;
+                    return QueueClientModel.fromFirestore(data);
+                  }).toList();
+
+              if (!controller.isClosed) {
+                controller.add(clients);
+              }
+
+              final stateText = state == 0 ? 'Pendiente' : 'Preparado';
+              print('✅ PickingRX ($stateText): ${clients.length} clientes');
+            } catch (e) {
+              print('❌ Error procesando PickingRX (state $state): $e');
+              if (!controller.isClosed) {
+                controller.addError(e);
+              }
+            }
+          },
+          onError: (error) {
+            print('❌ Error en listener PickingRX (state $state): $error');
+            if (!controller.isClosed) {
+              controller.addError(error);
+            }
+          },
+        );
+
+    // Guardar referencia al listener
+    _listeners[controllerKey] = [listener];
+
+    return controller.stream;
   }
 
   // ===========================================
@@ -352,7 +349,7 @@ class QueueService {
     }
   }
 
-  /// Método genérico para realizar acciones POST
+  /// Método genérico para realizar acciones POST (mantenemos esto sin cambios)
   Future<bool> _performAction(
     String url,
     int storeId,
@@ -375,6 +372,49 @@ class QueueService {
       }
     } catch (e) {
       throw Exception('Error de conexión al $actionDescription: $e');
+    }
+  }
+
+  /// Cancela todos los listeners y libera recursos
+  void dispose() {
+    print('🧹 Liberando recursos de QueueService');
+
+    // Cancelar todos los listeners
+    for (final listenerGroup in _listeners.values) {
+      for (final listener in listenerGroup) {
+        listener.cancel();
+      }
+    }
+    _listeners.clear();
+
+    // Cerrar todos los controllers
+    for (final controller in _controllers.values) {
+      if (!controller.isClosed) {
+        controller.close();
+      }
+    }
+    _controllers.clear();
+  }
+
+  /// Cancela listeners específicos para un store
+  void disposeStore(int storeId) {
+    final keysToRemove = <String>[];
+
+    for (final key in _controllers.keys) {
+      if (key.contains('_$storeId')) {
+        _listeners[key]?.forEach((listener) => listener.cancel());
+        _listeners.remove(key);
+
+        final controller = _controllers[key];
+        if (controller != null && !controller.isClosed) {
+          controller.close();
+        }
+        keysToRemove.add(key);
+      }
+    }
+
+    for (final key in keysToRemove) {
+      _controllers.remove(key);
     }
   }
 }

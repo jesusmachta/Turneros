@@ -39,6 +39,70 @@ class QueueClientModel {
     );
   }
 
+  /// Crea un cliente desde datos de Firestore
+  factory QueueClientModel.fromFirestore(Map<String, dynamic> data) {
+    return QueueClientModel(
+      id: data['id'] ?? '',
+      storeid: data['storeid'] ?? 0,
+      comesFrom: data['comes_from'] ?? '',
+      cedula: data['cedula'] ?? 0,
+      documento: data['documento'] ?? '',
+      country: data['country'] ?? '',
+      turn: data['Turn'] ?? 0,
+      state: _parseFirestoreState(data['state']),
+      createdAt: _parseFirestoreTimestamp(data['Created_At']),
+      attendedBy: data['attendedBy'], // Puede ser null
+    );
+  }
+
+  /// Convierte un estado de Firestore a String
+  static String _parseFirestoreState(dynamic state) {
+    if (state == null) return '';
+
+    // Si es un número (como en PickingRX), convertir a string
+    if (state is int) {
+      return state.toString();
+    }
+
+    // Si es string, devolverlo tal como está
+    if (state is String) {
+      return state;
+    }
+
+    return state.toString();
+  }
+
+  /// Convierte un Timestamp de Firestore a DateTime
+  static DateTime _parseFirestoreTimestamp(dynamic timestamp) {
+    if (timestamp == null) {
+      return DateTime.now();
+    }
+
+    // Si es un Timestamp de Firestore
+    if (timestamp.runtimeType.toString().contains('Timestamp')) {
+      return timestamp.toDate();
+    }
+
+    // Si es un String (formato ISO)
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    }
+
+    // Si es un Map con _seconds y _nanoseconds (formato serializado de Timestamp)
+    if (timestamp is Map<String, dynamic>) {
+      if (timestamp.containsKey('_seconds')) {
+        final seconds = timestamp['_seconds'];
+        final nanoseconds = timestamp['_nanoseconds'] ?? 0;
+        return DateTime.fromMillisecondsSinceEpoch(
+          seconds * 1000 + (nanoseconds / 1000000).round(),
+        );
+      }
+    }
+
+    // Fallback
+    return DateTime.now();
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

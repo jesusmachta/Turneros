@@ -51,7 +51,8 @@ class _ServicesManagementViewState extends State<ServicesManagementView> {
         authController.currentUser != null &&
         authController.currentUser!.storeId != null) {
       final storeId = authController.currentUser!.storeId.toString();
-      _servicesController.loadServices(storeId);
+      print('🚀 Iniciando escucha de servicios para Store ID: $storeId');
+      _servicesController.startListening(storeId);
     }
   }
 

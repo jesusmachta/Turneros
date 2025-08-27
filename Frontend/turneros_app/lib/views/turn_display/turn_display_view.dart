@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/auth_controller.dart';
@@ -14,7 +13,6 @@ class TurnDisplayView extends StatefulWidget {
 
 class _TurnDisplayViewState extends State<TurnDisplayView> {
   late TurnDisplayController _turnDisplayController;
-  Timer? _refreshTimer;
 
   // Colores según el diseño
   static const Color primaryBlue = Color(0xFF1E3A8A); // Azul para "En Atención"
@@ -28,46 +26,29 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
   void initState() {
     super.initState();
     _turnDisplayController = TurnDisplayController();
-    _loadInitialData();
-    _startAutoRefresh();
+    _startRealTimeListening();
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
     _turnDisplayController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadInitialData() async {
-    final authController = context.read<AuthController>();
-    if (authController.isAuthenticated &&
-        authController.currentUser?.storeId != null) {
-      await _turnDisplayController.loadAllTurnsData(
-        authController.currentUser!.storeId!,
-      );
-    }
-  }
-
-  void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+  void _startRealTimeListening() {
+    // Usar addPostFrameCallback para asegurar que el context esté disponible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final authController = context.read<AuthController>();
-      if (mounted &&
-          authController.isAuthenticated &&
-          authController.currentUser?.storeId != null &&
-          !_turnDisplayController.isLoading) {
-        _turnDisplayController.refreshData(
+      if (authController.isAuthenticated &&
+          authController.currentUser?.storeId != null) {
+        print(
+          '🚀 Iniciando escucha en tiempo real para Store ID: ${authController.currentUser!.storeId}',
+        );
+        _turnDisplayController.startListening(
           authController.currentUser!.storeId!,
         );
       }
     });
-  }
-
-  void _navigateToHome() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const HomeView()),
-      (route) => false,
-    );
   }
 
   @override

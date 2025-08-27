@@ -26,6 +26,18 @@ class ServiceModel {
     );
   }
 
+  /// Crea un servicio desde datos de Firestore
+  factory ServiceModel.fromFirestore(Map<String, dynamic> data) {
+    return ServiceModel(
+      sms: data['SMS'] ?? false,
+      active: data['active'] ?? false,
+      screen: data['screen'] ?? false,
+      name: data['name'] ?? '',
+      type: data['type'] ?? '',
+      iconUrl: data['iconUrl'] ?? '',
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'SMS': sms,

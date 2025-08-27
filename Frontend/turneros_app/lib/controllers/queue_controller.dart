@@ -4,7 +4,7 @@ import '../models/queue_client_model.dart';
 import '../models/service_model.dart';
 import '../services/queue_service.dart';
 
-/// Controlador para manejar las colas de espera y atención
+/// Controlador para manejar las colas de espera y atención usando streams
 class QueueController extends ChangeNotifier {
   final QueueService _queueService = QueueService();
 
@@ -19,7 +19,10 @@ class QueueController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   int? _storeId;
-  Timer? _refreshTimer;
+
+  // Subscripciones a los streams
+  final Map<QueueType, StreamSubscription<List<QueueClientModel>>>
+  _subscriptions = {};
 
   // Getters
   List<QueueClientModel> get pharmacyWaiting => _pharmacyWaiting;
@@ -34,58 +37,133 @@ class QueueController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Inicializa el controlador con el storeId
+  /// Inicializa el controlador con el storeId usando streams
   void initialize(int storeId) {
     _storeId = storeId;
-    loadQueueData();
-    startAutoRefresh(); // Iniciar auto-refresh
+    _startListening();
   }
 
-  /// Carga todos los datos de las colas
-  Future<void> loadQueueData() async {
+  /// Inicia la escucha de todos los streams de las colas
+  void _startListening() {
     if (_storeId == null) return;
 
     _setLoading(true);
     _error = null;
 
-    try {
-      final queueData = await _queueService.getAllQueueData(_storeId!);
+    print(
+      '🚀 Iniciando listeners para gestión de clientes - Store ID: $_storeId',
+    );
 
-      _pharmacyWaiting = queueData[QueueType.pharmacyWaiting] ?? [];
-      _pharmacyAttending = queueData[QueueType.pharmacyAttending] ?? [];
-      _pharmaceuticalServicesWaiting =
-          queueData[QueueType.pharmaceuticalServicesWaiting] ?? [];
-      _pharmaceuticalServicesAttending =
-          queueData[QueueType.pharmaceuticalServicesAttending] ?? [];
-      _pickingRxPending = queueData[QueueType.pickingRxPending] ?? [];
-      _pickingRxPrepared = queueData[QueueType.pickingRxPrepared] ?? [];
+    final streams = _queueService.getAllQueueStreams(_storeId!);
 
-      notifyListeners();
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('Error en loadQueueData: $e');
-    } finally {
-      _setLoading(false);
+    // Configurar listener para farmacia en espera
+    _subscriptions[QueueType
+        .pharmacyWaiting] = streams[QueueType.pharmacyWaiting]!.listen(
+      (clients) {
+        _pharmacyWaiting = clients;
+        _setLoading(false);
+        notifyListeners();
+        print('✅ Farmacia en espera: ${clients.length} clientes');
+      },
+      onError: (error) {
+        _handleStreamError('Farmacia en espera', error);
+      },
+    );
+
+    // Configurar listener para farmacia atendiendo
+    _subscriptions[QueueType
+        .pharmacyAttending] = streams[QueueType.pharmacyAttending]!.listen(
+      (clients) {
+        _pharmacyAttending = clients;
+        _setLoading(false);
+        notifyListeners();
+        print('✅ Farmacia atendiendo: ${clients.length} clientes');
+      },
+      onError: (error) {
+        _handleStreamError('Farmacia atendiendo', error);
+      },
+    );
+
+    // Configurar listener para servicios en espera
+    _subscriptions[QueueType.pharmaceuticalServicesWaiting] =
+        streams[QueueType.pharmaceuticalServicesWaiting]!.listen(
+          (clients) {
+            _pharmaceuticalServicesWaiting = clients;
+            _setLoading(false);
+            notifyListeners();
+            print('✅ Servicios en espera: ${clients.length} clientes');
+          },
+          onError: (error) {
+            _handleStreamError('Servicios en espera', error);
+          },
+        );
+
+    // Configurar listener para servicios atendiendo
+    _subscriptions[QueueType.pharmaceuticalServicesAttending] =
+        streams[QueueType.pharmaceuticalServicesAttending]!.listen(
+          (clients) {
+            _pharmaceuticalServicesAttending = clients;
+            _setLoading(false);
+            notifyListeners();
+            print('✅ Servicios atendiendo: ${clients.length} clientes');
+          },
+          onError: (error) {
+            _handleStreamError('Servicios atendiendo', error);
+          },
+        );
+
+    // Configurar listener para picking RX pendiente
+    _subscriptions[QueueType
+        .pickingRxPending] = streams[QueueType.pickingRxPending]!.listen(
+      (clients) {
+        _pickingRxPending = clients;
+        _setLoading(false);
+        notifyListeners();
+        print('✅ Picking RX pendiente: ${clients.length} clientes');
+      },
+      onError: (error) {
+        _handleStreamError('Picking RX pendiente', error);
+      },
+    );
+
+    // Configurar listener para picking RX preparado
+    _subscriptions[QueueType
+        .pickingRxPrepared] = streams[QueueType.pickingRxPrepared]!.listen(
+      (clients) {
+        _pickingRxPrepared = clients;
+        _setLoading(false);
+        notifyListeners();
+        print('✅ Picking RX preparado: ${clients.length} clientes');
+      },
+      onError: (error) {
+        _handleStreamError('Picking RX preparado', error);
+      },
+    );
+  }
+
+  /// Maneja errores de los streams
+  void _handleStreamError(String streamName, dynamic error) {
+    _setLoading(false);
+    _error = 'Error en $streamName: $error';
+    print('❌ Error en stream $streamName: $error');
+    notifyListeners();
+  }
+
+  /// Recarga manualmente los datos (ahora solo reinicia los listeners)
+  Future<void> refresh() async {
+    if (_storeId != null) {
+      _stopListening();
+      _startListening();
     }
   }
 
-  /// Recarga manualmente los datos
-  Future<void> refresh() async {
-    await loadQueueData();
-  }
-
-  /// Actualiza automáticamente los datos cada cierto tiempo
-  void startAutoRefresh({Duration interval = const Duration(seconds: 30)}) {
-    stopAutoRefresh(); // Cancelar timer anterior si existe
-    _refreshTimer = Timer.periodic(interval, (timer) {
-      loadQueueData();
-    });
-  }
-
-  /// Para el auto-refresh
-  void stopAutoRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = null;
+  /// Detiene todos los listeners activos
+  void _stopListening() {
+    for (final subscription in _subscriptions.values) {
+      subscription.cancel();
+    }
+    _subscriptions.clear();
+    print('🛑 Listeners de gestión de clientes detenidos');
   }
 
   void _setLoading(bool value) {
@@ -109,8 +187,8 @@ class QueueController extends ChangeNotifier {
       );
 
       if (success) {
-        // Recargar datos para mostrar los cambios
-        await loadQueueData();
+        // Los datos se actualizarán automáticamente via streams
+        print('✅ Acción completada: iniciar atención farmacia');
       }
     } catch (e) {
       _error = 'Error al iniciar atención: $e';
@@ -132,7 +210,7 @@ class QueueController extends ChangeNotifier {
       );
 
       if (success) {
-        await loadQueueData();
+        // Los datos se actualizarán automáticamente via streams
       }
     } catch (e) {
       _error = 'Error al iniciar atención: $e';
@@ -154,7 +232,7 @@ class QueueController extends ChangeNotifier {
       );
 
       if (success) {
-        await loadQueueData();
+        // Los datos se actualizarán automáticamente via streams
       }
     } catch (e) {
       _error = 'Error al finalizar atención: $e';
@@ -176,7 +254,7 @@ class QueueController extends ChangeNotifier {
       );
 
       if (success) {
-        await loadQueueData();
+        // Los datos se actualizarán automáticamente via streams
       }
     } catch (e) {
       _error = 'Error al finalizar atención: $e';
@@ -198,7 +276,7 @@ class QueueController extends ChangeNotifier {
       );
 
       if (success) {
-        await loadQueueData();
+        // Los datos se actualizarán automáticamente via streams
       }
     } catch (e) {
       _error = 'Error al cancelar turno: $e';
@@ -220,7 +298,7 @@ class QueueController extends ChangeNotifier {
       );
 
       if (success) {
-        await loadQueueData();
+        // Los datos se actualizarán automáticamente via streams
       }
     } catch (e) {
       _error = 'Error al cancelar turno: $e';
@@ -260,7 +338,7 @@ class QueueController extends ChangeNotifier {
       );
 
       if (success) {
-        await loadQueueData();
+        // Los datos se actualizarán automáticamente via streams
       }
     } catch (e) {
       _error = 'Error al transferir cliente: $e';
@@ -272,7 +350,8 @@ class QueueController extends ChangeNotifier {
 
   @override
   void dispose() {
-    stopAutoRefresh();
+    _stopListening();
+    _queueService.dispose();
     super.dispose();
   }
 }

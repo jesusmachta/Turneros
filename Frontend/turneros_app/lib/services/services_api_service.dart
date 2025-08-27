@@ -1,32 +1,150 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/service_model.dart';
 
 class ServicesApiService {
-  static const String _baseUrl =
-      'https://getservices-228344336816.us-central1.run.app';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Obtiene la lista de servicios disponibles desde la API
-  /// [storeId] - ID de la tienda para filtrar los servicios
+  // StreamControllers para manejar los streams de servicios
+  final Map<String, StreamController<List<ServiceModel>>> _controllers = {};
+
+  // Referencias a los listeners para poder cancelarlos
+  final Map<String, StreamSubscription> _listeners = {};
+
+  /// Obtiene un stream de servicios activos desde Firestore
+  /// [storeId] - ID de la tienda para obtener los servicios
+  Stream<List<ServiceModel>> getServicesStream({required String storeId}) {
+    final controllerKey = 'services_$storeId';
+
+    // Si ya existe un controller para este store, lo retornamos
+    if (_controllers.containsKey(controllerKey)) {
+      return _controllers[controllerKey]!.stream;
+    }
+
+    // Crear nuevo controller
+    final controller = StreamController<List<ServiceModel>>.broadcast();
+    _controllers[controllerKey] = controller;
+
+    // Configurar el listener de Firestore
+    final listener = _firestore
+        .collection('Turns_Store')
+        .doc(storeId)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            try {
+              if (!snapshot.exists) {
+                if (!controller.isClosed) {
+                  controller.add([]);
+                }
+                return;
+              }
+
+              final storeData = snapshot.data();
+              final allServices =
+                  storeData?['services'] as List<dynamic>? ?? [];
+
+              // Filtrar solo servicios activos
+              final activeServices =
+                  allServices
+                      .where((service) => service['active'] == true)
+                      .map(
+                        (service) => ServiceModel.fromFirestore(
+                          service as Map<String, dynamic>,
+                        ),
+                      )
+                      .toList();
+
+              if (!controller.isClosed) {
+                controller.add(activeServices);
+              }
+
+              print(
+                '✅ Servicios activos: ${activeServices.length} para store $storeId',
+              );
+            } catch (e) {
+              print('❌ Error procesando servicios: $e');
+              if (!controller.isClosed) {
+                controller.addError(e);
+              }
+            }
+          },
+          onError: (error) {
+            print('❌ Error en listener de servicios: $error');
+            if (!controller.isClosed) {
+              controller.addError(error);
+            }
+          },
+        );
+
+    // Guardar referencia al listener
+    _listeners[controllerKey] = listener;
+
+    return controller.stream;
+  }
+
+  /// Método legacy para compatibilidad (ahora usa Firestore)
   Future<List<ServiceModel>> getServices({required String storeId}) async {
     try {
-      final uri = Uri.parse(
-        _baseUrl,
-      ).replace(queryParameters: {'storeid': storeId});
-
-      final response = await http.get(
-        uri,
-        headers: {'Content-Type': 'application/json'},
+      print(
+        '⚠️ Método getServices() legacy - considera usar getServicesStream()',
       );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonData = json.decode(response.body);
-        return jsonData.map((json) => ServiceModel.fromJson(json)).toList();
-      } else {
-        throw Exception('Error al cargar servicios: ${response.statusCode}');
+      final snapshot =
+          await _firestore.collection('Turns_Store').doc(storeId).get();
+
+      if (!snapshot.exists) {
+        return [];
       }
+
+      final storeData = snapshot.data();
+      final allServices = storeData?['services'] as List<dynamic>? ?? [];
+
+      // Filtrar solo servicios activos
+      final activeServices =
+          allServices
+              .where((service) => service['active'] == true)
+              .map(
+                (service) =>
+                    ServiceModel.fromFirestore(service as Map<String, dynamic>),
+              )
+              .toList();
+
+      return activeServices;
     } catch (e) {
-      throw Exception('Error de conexión: $e');
+      throw Exception('Error al obtener servicios: $e');
+    }
+  }
+
+  /// Cancela todos los listeners y libera recursos
+  void dispose() {
+    print('🧹 Liberando recursos de ServicesApiService');
+
+    // Cancelar todos los listeners
+    for (final listener in _listeners.values) {
+      listener.cancel();
+    }
+    _listeners.clear();
+
+    // Cerrar todos los controllers
+    for (final controller in _controllers.values) {
+      if (!controller.isClosed) {
+        controller.close();
+      }
+    }
+    _controllers.clear();
+  }
+
+  /// Cancela listeners específicos para un store
+  void disposeStore(String storeId) {
+    final controllerKey = 'services_$storeId';
+
+    _listeners[controllerKey]?.cancel();
+    _listeners.remove(controllerKey);
+
+    final controller = _controllers.remove(controllerKey);
+    if (controller != null && !controller.isClosed) {
+      controller.close();
     }
   }
 

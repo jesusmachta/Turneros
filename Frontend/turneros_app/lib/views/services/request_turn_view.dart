@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -19,6 +20,7 @@ class _RequestTurnViewState extends State<RequestTurnView> {
   List<ServiceModel> _services = [];
   bool _isLoading = true;
   String? _error;
+  StreamSubscription<List<ServiceModel>>? _servicesSubscription;
 
   // Colores según el diseño de la app
   static const Color primaryBlue = Color(0xFF002858);
@@ -27,42 +29,75 @@ class _RequestTurnViewState extends State<RequestTurnView> {
   @override
   void initState() {
     super.initState();
-    _loadServices();
+    _startListeningToServices();
   }
 
-  Future<void> _loadServices() async {
-    try {
+  @override
+  void dispose() {
+    _servicesSubscription?.cancel();
+    _servicesApiService.dispose();
+    super.dispose();
+  }
+
+  void _startListeningToServices() {
+    // Usar addPostFrameCallback para asegurar que el context esté disponible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authController = context.read<AuthController>();
+      if (!authController.isAuthenticated ||
+          authController.currentUser?.storeId == null) {
+        setState(() {
+          _error = 'Usuario no autenticado o sin tienda asignada';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final storeId = authController.currentUser!.storeId!.toString();
+
+      print('🚀 Iniciando listener de servicios para Store ID: $storeId');
+
       setState(() {
         _isLoading = true;
         _error = null;
       });
 
-      // Obtener el usuario autenticado y su storeId
-      final authController = context.read<AuthController>();
-      if (!authController.isAuthenticated ||
-          authController.currentUser?.storeId == null) {
-        throw Exception('Usuario no autenticado o sin tienda asignada');
-      }
+      // Configurar el listener del stream
+      _servicesSubscription = _servicesApiService
+          .getServicesStream(storeId: storeId)
+          .listen(
+            (services) {
+              if (mounted) {
+                setState(() {
+                  _services =
+                      services; // Ya filtrados por active = true en el servicio
+                  _isLoading = false;
+                  _error = null;
+                });
+                print(
+                  '✅ Servicios actualizados: ${services.length} servicios activos',
+                );
+              }
+            },
+            onError: (error) {
+              if (mounted) {
+                setState(() {
+                  _error = error.toString();
+                  _isLoading = false;
+                });
+                print('❌ Error en listener de servicios: $error');
+              }
+            },
+          );
+    });
+  }
 
-      final storeId = authController.currentUser!.storeId!.toString();
+  /// Método legacy para recargar servicios manualmente
+  Future<void> _loadServices() async {
+    print('⚠️ Método _loadServices() legacy llamado - reiniciando listeners');
 
-      // Usar el endpoint real con storeId del usuario autenticado
-      final services = await _servicesApiService.getServices(storeId: storeId);
-
-      if (mounted) {
-        setState(() {
-          _services = services.where((service) => service.active).toList();
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
+    // Reiniciar el listener
+    _servicesSubscription?.cancel();
+    _startListeningToServices();
   }
 
   @override

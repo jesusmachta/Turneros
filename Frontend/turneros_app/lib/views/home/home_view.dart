@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -20,6 +21,8 @@ class _HomeViewState extends State<HomeView> {
   final DashboardService _dashboardService = DashboardService();
   DashboardStats? _stats;
   bool _isLoading = true;
+  StreamSubscription<DashboardStats>? _statsSubscription;
+  int? _currentStoreId;
 
   // Colores según el diseño
   static const Color primaryBlue = Color(0xFF002858); // Azul oscuro header
@@ -34,32 +37,72 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-    _loadDashboardData();
+    _startListeningToStats();
   }
 
-  Future<void> _loadDashboardData() async {
-    try {
-      final authController = context.read<AuthController>();
-      if (authController.isAuthenticated &&
-          authController.currentUser?.storeId != null) {
-        final stats = await _dashboardService.getDashboardStats(
-          authController.currentUser!.storeId!,
-        );
-        if (mounted) {
-          setState(() {
-            _stats = stats;
-            _isLoading = false;
-          });
-        }
+  @override
+  void dispose() {
+    _stopListening();
+    _dashboardService.dispose();
+    super.dispose();
+  }
+
+  void _startListeningToStats() {
+    final authController = context.read<AuthController>();
+    if (authController.isAuthenticated &&
+        authController.currentUser?.storeId != null) {
+      final storeId = authController.currentUser!.storeId!;
+
+      // Si ya estamos escuchando el mismo store, no hacer nada
+      if (_currentStoreId == storeId && _statsSubscription != null) {
+        return;
       }
-    } catch (e) {
-      print('Error loading dashboard data: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+
+      // Detener listener previo si existe
+      _stopListening();
+
+      _currentStoreId = storeId;
+
+      print('🚀 Iniciando listener de métricas para Store ID: $storeId');
+
+      // Configurar el listener del stream
+      _statsSubscription = _dashboardService
+          .getDashboardStatsStream(storeId)
+          .listen(
+            (stats) {
+              if (mounted) {
+                setState(() {
+                  _stats = stats;
+                  _isLoading = false;
+                });
+              }
+              print(
+                '✅ Métricas dashboard actualizadas: A=${stats.clientesAtendidos}, E=${stats.clientesEnAtencion}, Es=${stats.clientesEnEspera}, C=${stats.clientesCancelados}',
+              );
+            },
+            onError: (error) {
+              print('❌ Error en listener de métricas: $error');
+              if (mounted) {
+                setState(() {
+                  _isLoading = false;
+                });
+              }
+            },
+          );
     }
+  }
+
+  void _stopListening() {
+    _statsSubscription?.cancel();
+    _statsSubscription = null;
+    _currentStoreId = null;
+    print('🛑 Listener de métricas detenido');
+  }
+
+  /// Método para refresh manual (reinicia listeners)
+  Future<void> _refreshDashboardData() async {
+    print('🔄 Refrescando métricas - reiniciando listeners');
+    _startListeningToStats();
   }
 
   @override
