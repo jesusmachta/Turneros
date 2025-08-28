@@ -1,11 +1,11 @@
 {
-    "name": "turneros_app",
-    "short_name": "turneros_app",
+    "name": "Turneros FTD",
+    "short_name": "Turneros FTD",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Sistema de turnos de Farmatodo",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

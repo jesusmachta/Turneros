@@ -7,7 +7,7 @@
     <uses-permission android:name="com.sunmi.permission.SUNMI_PRINTER" />
     
     <application
-        android:label="turneros_app"
+        android:label="Turneros FTD"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
