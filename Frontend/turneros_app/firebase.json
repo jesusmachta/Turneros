@@ -29,6 +29,7 @@
     }
   },
   "hosting": {
+    "site": "turneros",
     "public": "build/web",
     "ignore": [
       "firebase.json",

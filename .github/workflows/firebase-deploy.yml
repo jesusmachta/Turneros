@@ -58,7 +58,7 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
-          firebase deploy --only hosting --project farmaturnos --token "$FIREBASE_TOKEN"
+          firebase deploy --only hosting:turneros --project farmaturnos --token "$FIREBASE_TOKEN"
 
       - name: Comment PR
         if: github.event_name == 'pull_request'
