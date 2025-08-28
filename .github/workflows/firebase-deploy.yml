@@ -20,9 +20,14 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.0"
+          flutter-version: "3.27.0"
           channel: "stable"
           cache: true
+
+      - name: Configure Flutter
+        run: |
+          flutter config --no-analytics
+          flutter --disable-analytics
 
       - name: Install Dependencies
         working-directory: Frontend/turneros_app
