@@ -48,12 +48,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyC5z1BqnClJ6puVr6z2saJp3e0u1RgHGQI',
-    appId: '1:228344336816:web:26ef8c898bd2d4e0c50675',
+    appId: '1:228344336816:web:88b5b4e288da8b46c50675',
     messagingSenderId: '228344336816',
     projectId: 'farmaturnos',
     authDomain: 'farmaturnos.firebaseapp.com',
     storageBucket: 'farmaturnos.firebasestorage.app',
-    measurementId: 'G-SHJQHH87SW',
+    measurementId: 'G-WZ87JKNHDX',
   );
 
   static const FirebaseOptions android = FirebaseOptions(

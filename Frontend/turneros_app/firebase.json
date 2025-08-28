@@ -1,1 +1,74 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"farmaturnos","appId":"1:228344336816:android:60ac2a2b60243a34c50675","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"farmaturnos","appId":"1:228344336816:ios:6159425ef6e2854fc50675","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"farmaturnos","configurations":{"android":"1:228344336816:android:60ac2a2b60243a34c50675","ios":"1:228344336816:ios:6159425ef6e2854fc50675","web":"1:228344336816:web:26ef8c898bd2d4e0c50675"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "farmaturnos",
+          "appId": "1:228344336816:android:60ac2a2b60243a34c50675",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "farmaturnos",
+          "appId": "1:228344336816:ios:6159425ef6e2854fc50675",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "farmaturnos",
+          "configurations": {
+            "android": "1:228344336816:android:60ac2a2b60243a34c50675",
+            "ios": "1:228344336816:ios:6159425ef6e2854fc50675",
+            "web": "1:228344336816:web:88b5b4e288da8b46c50675"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=86400"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(png|jpg|jpeg|gif|ico|svg|webp)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000"
+          }
+        ]
+      }
+    ]
+  }
+}

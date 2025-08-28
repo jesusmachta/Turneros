@@ -1,0 +1,87 @@
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Flutter Web to Firebase
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: "stable"
+          cache: true
+
+      - name: Install Dependencies
+        working-directory: Frontend/turneros_app
+        run: flutter pub get
+
+      - name: Analyze Code
+        working-directory: Frontend/turneros_app
+        run: flutter analyze
+
+      - name: Run Tests
+        working-directory: Frontend/turneros_app
+        run: flutter test
+
+      - name: Build Web App
+        working-directory: Frontend/turneros_app
+        run: flutter build web --release --web-renderer html
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Firebase Hosting
+        working-directory: Frontend/turneros_app
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          firebase deploy --only hosting --project farmaturnos --token "$FIREBASE_TOKEN"
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Preview deployed to Firebase Hosting!\n\n✅ Build successful\n📱 App: https://turneros.web.app\n📊 Status: Ready for review'
+            })
+
+  status-check:
+    name: Status Check
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    if: always()
+
+    steps:
+      - name: Check Job Status
+        run: |
+          if [ "${{ needs.build-and-deploy.result }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+            echo "🌐 App available at: https://turneros.web.app"
+            echo "🎯 Firebase Console: https://console.firebase.google.com/project/farmaturnos"
+          else
+            echo "❌ Deployment failed!"
+            exit 1
+          fi
