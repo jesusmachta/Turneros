@@ -6,6 +6,8 @@ import 'package:turneros_app/views/home/home_view.dart';
 import '../../controllers/auth_controller.dart';
 import '../../models/service_model.dart';
 import '../../services/services_api_service.dart';
+import '../../services/turn_api_service.dart';
+import '../../services/printer_service.dart';
 import 'document_input_view.dart';
 
 class RequestTurnView extends StatefulWidget {
@@ -17,6 +19,7 @@ class RequestTurnView extends StatefulWidget {
 
 class _RequestTurnViewState extends State<RequestTurnView> {
   final ServicesApiService _servicesApiService = ServicesApiService();
+  final TurnApiService _turnApiService = TurnApiService();
   List<ServiceModel> _services = [];
   bool _isLoading = true;
   String? _error;
@@ -156,7 +159,7 @@ class _RequestTurnViewState extends State<RequestTurnView> {
           Text(
             '¡Solicita tu Turno!',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 34,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -322,7 +325,7 @@ class _RequestTurnViewState extends State<RequestTurnView> {
                   child: Text(
                     service.name,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: primaryBlue,
                     ),
@@ -344,13 +347,212 @@ class _RequestTurnViewState extends State<RequestTurnView> {
   }
 
   void _handleServiceTap(ServiceModel service) {
-    // Navegar a la vista de entrada de documento
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DocumentInputView(service: service),
-      ),
+    final authController = context.read<AuthController>();
+    final storeId = authController.currentUser?.storeId ?? 0;
+
+    // Si el storeId está entre 3000 y 3999, crear turno directamente
+    if (storeId >= 3000 && storeId <= 3999) {
+      _createDirectTurn(service);
+    } else {
+      // Navegar a la vista de entrada de documento
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DocumentInputView(service: service),
+        ),
+      );
+    }
+  }
+
+  /// Crea un turno directamente sin solicitar datos de documento
+  Future<void> _createDirectTurn(ServiceModel service) async {
+    final authController = context.read<AuthController>();
+    final user = authController.currentUser;
+
+    if (user == null || user.storeId == null || user.country == null) {
+      _showErrorMessage('Error: Usuario no autenticado correctamente');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Crear turno con datos por defecto para tiendas 3000-3999
+      final result = await _turnApiService.createTurn(
+        storeId: user.storeId!,
+        name: service.name,
+        type: service.type,
+        cedula: 0, // Sin cédula para este tipo de tiendas
+        documento: 'Sin documento', // Sin documento para este tipo de tiendas
+        country: user.country!,
+      );
+
+      if (result['success']) {
+        // Imprimir ticket automáticamente para tiendas 3000-3999
+        final turnNumber = result['data']['turnNumber'] ?? 0;
+        print('🖨️ Imprimiendo ticket para turno directo #$turnNumber');
+
+        try {
+          final printResult = await PrinterService.printTurnTicket(
+            turnNumber: turnNumber,
+            cedula: 0, // Sin cédula para turnos directos
+            serviceType: service.type,
+          );
+          print('✅ Resultado de impresión: $printResult');
+        } catch (e) {
+          print('⚠️ Error al imprimir: $e');
+          // Continuar mostrando el diálogo aunque falle la impresión
+        }
+
+        _showSuccessDialog(result['data'], service);
+      } else {
+        _showErrorMessage(result['error'] ?? 'Error desconocido');
+      }
+    } catch (e) {
+      _showErrorMessage('Error al procesar la solicitud: ${e.toString()}');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      gravity: ToastGravity.BOTTOM,
+      toastLength: Toast.LENGTH_LONG,
     );
+  }
+
+  void _showSuccessDialog(Map<String, dynamic> turnData, ServiceModel service) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            contentPadding: const EdgeInsets.all(32),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icono de éxito con círculo verde
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 48),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Título centrado
+                const Text(
+                  '¡Turno Creado!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: primaryBlue,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Mensaje centrado
+                const Text(
+                  'Tu turno ha sido creado exitosamente.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Contenedor con información del servicio
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Servicio: ${service.name}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: primaryBlue,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Número de turno en grande
+                      if (turnData['turnNumber'] != null) ...[
+                        const Text(
+                          'Tu número es:',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 24,
+                          ),
+                          decoration: BoxDecoration(
+                            color: primaryBlue,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${turnData['turnNumber']}',
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                const Text(
+                  'Regresando automáticamente...',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+
+    // Cerrar automáticamente después de 6 segundos
+    Future.delayed(const Duration(seconds: 6), () {
+      if (mounted) {
+        Navigator.of(context).pop(); // Cerrar diálogo
+      }
+    });
   }
 
   /// Construye el widget de imagen para los servicios
@@ -365,8 +567,8 @@ class _RequestTurnViewState extends State<RequestTurnView> {
         if (loadingProgress == null) return child;
         return Center(
           child: SizedBox(
-            width: 20,
-            height: 20,
+            width: 30,
+            height: 30,
             child: CircularProgressIndicator(
               value:
                   loadingProgress.expectedTotalBytes != null

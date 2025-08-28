@@ -4,11 +4,18 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 import 'controllers/auth_controller.dart';
+import 'services/printer_service.dart';
 import 'views/auth/login_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Inicializar impresora Sunmi
+  await PrinterService.initializeSunmiPrinter();
+
   runApp(const TurnerosApp());
 }
 

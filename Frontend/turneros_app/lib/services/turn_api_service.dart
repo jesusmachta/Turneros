@@ -1,11 +1,10 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Servicio para crear turnos usando Firestore directo (Real-time optimizado)
 class TurnApiService {
-  static const String _baseUrl =
-      'https://createturn-228344336816.us-central1.run.app';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Crea un nuevo turno
+  /// Crea un nuevo turno con Firestore directo (transacción atómica)
   Future<Map<String, dynamic>> createTurn({
     required int storeId,
     required String name,
@@ -15,50 +14,85 @@ class TurnApiService {
     required String country,
   }) async {
     try {
-      final url = Uri.parse(_baseUrl);
+      print('🚀 Creando turno con Firestore directo:');
+      print('Store: $storeId, Name: $name, Type: $type, Cedula: $cedula');
 
-      final body = {
-        'storeid': storeId,
-        'name': name,
-        'type': type,
-        'cedula': cedula,
-        'documento': documento,
-        'country': country,
-      };
+      // Validar tipo
+      if (type != 'Farmacia' && type != 'Servicio') {
+        return {
+          'success': false,
+          'error': "El tipo debe ser 'Farmacia' o 'Servicio'",
+        };
+      }
 
-      print('🚀 Enviando solicitud de turno:');
-      print('URL: $url');
-      print('Body: ${jsonEncode(body)}');
+      int assignedTurnNumber = 0;
+      String newTurnId = '';
 
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+      // Ejecutar creación en transacción atómica para consistencia
+      await _firestore.runTransaction((transaction) async {
+        final storeRef = _firestore
+            .collection('Turns_Store')
+            .doc(storeId.toString());
 
-      print('📡 Respuesta del servidor:');
-      print('Status Code: ${response.statusCode}');
-      print('Body: ${response.body}');
+        // Determinar campos según el tipo
+        final isFarmacia = type == 'Farmacia';
+        final counterField = isFarmacia ? 'Turns_Pharmacy' : 'Turns_Services';
+        final subcollectionName =
+            isFarmacia ? 'Turns_Pharmacy' : 'Turns_Services';
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        return {'success': true, 'data': responseData};
-      } else {
-        // Intentar decodificar el error del servidor
-        String errorMessage = 'Error al crear el turno';
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMessage =
-              errorData['message'] ?? errorData['error'] ?? errorMessage;
-        } catch (e) {
-          errorMessage = 'Error del servidor: ${response.statusCode}';
+        // Leer documento de la tienda
+        final storeDoc = await transaction.get(storeRef);
+        if (!storeDoc.exists) {
+          throw Exception('La tienda con ID $storeId no fue encontrada');
         }
 
-        return {'success': false, 'error': errorMessage};
-      }
+        final storeData = storeDoc.data()!;
+        final currentTurnNumber = storeData[counterField] ?? 1;
+        assignedTurnNumber = currentTurnNumber;
+
+        // Crear nuevo documento de turno
+        final newTurnRef = storeRef.collection(subcollectionName).doc();
+        newTurnId = newTurnRef.id;
+
+        final newTurnData = {
+          'storeid': storeId,
+          'comes_from': name,
+          'cedula': cedula,
+          'documento': documento,
+          'country': country,
+          'Turn': currentTurnNumber,
+          'state': 'Esperando',
+          'Created_At': FieldValue.serverTimestamp(),
+        };
+
+        // Realizar escrituras en la transacción
+        transaction.set(newTurnRef, newTurnData);
+        transaction.update(storeRef, {counterField: currentTurnNumber + 1});
+
+        print('✅ Turno #$currentTurnNumber creado con ID: $newTurnId');
+      });
+
+      // Respuesta exitosa compatible con la API anterior
+      return {
+        'success': true,
+        'data': {
+          'success': true,
+          'message':
+              'Turno #$assignedTurnNumber creado exitosamente para el tipo \'$type\'.',
+          'assignedTurn': assignedTurnNumber,
+          'storeid': storeId,
+          'turnNumber': assignedTurnNumber,
+          'turnId': newTurnId,
+        },
+      };
     } catch (e) {
-      print('❌ Error en createTurn: $e');
-      return {'success': false, 'error': 'Error de conexión: ${e.toString()}'};
+      print('❌ Error al crear turno con Firestore: $e');
+
+      if (e.toString().contains('no fue encontrada')) {
+        return {'success': false, 'error': e.toString()};
+      } else {
+        return {'success': false, 'error': 'Error al crear el turno: $e'};
+      }
     }
   }
 }

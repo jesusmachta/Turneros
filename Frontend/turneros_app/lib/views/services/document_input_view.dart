@@ -4,6 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import '../../controllers/auth_controller.dart';
 import '../../models/service_model.dart';
 import '../../services/turn_api_service.dart';
+import '../../services/printer_service.dart';
 
 class DocumentInputView extends StatefulWidget {
   final ServiceModel service;
@@ -150,6 +151,22 @@ class _DocumentInputViewState extends State<DocumentInputView> {
       );
 
       if (result['success']) {
+        // Imprimir ticket automáticamente
+        final turnNumber = result['data']['turnNumber'] ?? 0;
+        print('🖨️ Imprimiendo ticket #$turnNumber para usuario con documento');
+
+        try {
+          final printResult = await PrinterService.printTurnTicket(
+            turnNumber: turnNumber,
+            cedula: cedula,
+            serviceType: widget.service.type,
+          );
+          print('✅ Resultado de impresión: $printResult');
+        } catch (e) {
+          print('⚠️ Error al imprimir: $e');
+          // Continuar mostrando el diálogo aunque falle la impresión
+        }
+
         _showSuccessDialog(result['data']);
       } else {
         _showErrorMessage(result['error'] ?? 'Error desconocido');
@@ -179,29 +196,107 @@ class _DocumentInputViewState extends State<DocumentInputView> {
       barrierDismissible: false,
       builder:
           (context) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 28),
-                SizedBox(width: 8),
-                Text('¡Turno Creado!'),
-              ],
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
             ),
+            contentPadding: const EdgeInsets.all(32),
             content: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Tu turno ha sido creado exitosamente.'),
-                const SizedBox(height: 16),
-                Text('Servicio: ${widget.service.name}'),
-                Text('Tipo: ${widget.service.type}'),
-                Text('Documento: $_selectedDocumentType'),
-                if (turnData['turnNumber'] != null)
-                  Text('Número de turno: ${turnData['turnNumber']}'),
-                if (turnData['estimatedTime'] != null)
-                  Text('Tiempo estimado: ${turnData['estimatedTime']}'),
-                const SizedBox(height: 16),
+                // Icono de éxito con círculo verde
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 48),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Título centrado
+                const Text(
+                  '¡Turno Creado!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: primaryBlue,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Mensaje centrado
+                const Text(
+                  'Tu turno ha sido creado exitosamente.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Contenedor con información del servicio
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Servicio: ${widget.service.name}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: primaryBlue,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Número de turno en grande
+                      if (turnData['turnNumber'] != null) ...[
+                        const Text(
+                          'Tu número es:',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 24,
+                          ),
+                          decoration: BoxDecoration(
+                            color: primaryBlue,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${turnData['turnNumber']}',
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
                 const Text(
                   'Regresando automáticamente...',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
