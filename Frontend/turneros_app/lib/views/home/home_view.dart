@@ -100,7 +100,8 @@ class _HomeViewState extends State<HomeView> {
   }
 
   /// Método para refresh manual (reinicia listeners)
-  Future<void> _refreshDashboardData() async {
+  Future<void> refreshDashboardData() async {
+    // ignore: avoid_print
     print('🔄 Refrescando métricas - reiniciando listeners');
     _startListeningToStats();
   }
