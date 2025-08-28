@@ -15,7 +15,7 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
   late TurnDisplayController _turnDisplayController;
 
   // Colores según el diseño
-  static const Color primaryBlue = Color(0xFF1E3A8A); // Azul para "En Atención"
+  static const Color primaryBlue = Color(0xFF002858); // Azul para "En Atención"
   static const Color lightGrey = Color(0xFFF3F4F6); // Gris claro para fondo
   static const Color darkGrey = Color(0xFF374151); // Gris oscuro para texto
   static const Color orangeWaiting = Color(
@@ -753,9 +753,9 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
                     valueColor: AlwaysStoppedAnimation<Color>(
                       Color.fromARGB(
                         40,
-                        30,
-                        58,
-                        138,
+                        0,
+                        40,
+                        88,
                       ), // primaryBlue muy transparente
                     ),
                     strokeWidth: 2,

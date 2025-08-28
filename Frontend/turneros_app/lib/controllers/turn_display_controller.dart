@@ -26,6 +26,10 @@ class TurnDisplayController extends ChangeNotifier {
   // Store ID actual
   int? _currentStoreId;
 
+  // Flags para evitar sonido en la primera carga
+  bool _isFirstPharmacyLoad = true;
+  bool _isFirstServicesLoad = true;
+
   // Getters para Farmacia
   TurnScreenData get pharmacyData => _pharmacyData;
   bool get isLoadingPharmacy => _isLoadingPharmacy;
@@ -56,6 +60,11 @@ class TurnDisplayController extends ChangeNotifier {
     _currentStoreId = storeId;
     _isLoadingPharmacy = true;
     _isLoadingServices = true;
+
+    // Reiniciar flags de primera carga
+    _isFirstPharmacyLoad = true;
+    _isFirstServicesLoad = true;
+
     notifyListeners();
 
     // Iniciar listener para Farmacia
@@ -76,12 +85,14 @@ class TurnDisplayController extends ChangeNotifier {
             _isLoadingPharmacy = false;
             _pharmacyError = null;
 
-            // Solo reproducir sonido si hay cambios significativos
-            if (_hasSignificantChange(_pharmacyData, data)) {
+            // Solo reproducir sonido si hay cambios significativos y no es la primera carga
+            if (!_isFirstPharmacyLoad &&
+                _hasSignificantChange(_pharmacyData, data)) {
               _audioService.playAttendSound();
             }
 
             _pharmacyData = data;
+            _isFirstPharmacyLoad = false;
             notifyListeners();
             print('✅ Datos de Farmacia actualizados en tiempo real');
           },
@@ -105,12 +116,14 @@ class TurnDisplayController extends ChangeNotifier {
             _isLoadingServices = false;
             _servicesError = null;
 
-            // Solo reproducir sonido si hay cambios significativos
-            if (_hasSignificantChange(_servicesData, data)) {
+            // Solo reproducir sonido si hay cambios significativos y no es la primera carga
+            if (!_isFirstServicesLoad &&
+                _hasSignificantChange(_servicesData, data)) {
               _audioService.playAttendSound();
             }
 
             _servicesData = data;
+            _isFirstServicesLoad = false;
             notifyListeners();
             print('✅ Datos de Servicios actualizados en tiempo real');
           },
@@ -125,17 +138,34 @@ class TurnDisplayController extends ChangeNotifier {
 
   /// Verifica si hay cambios significativos que justifiquen reproducir sonido
   bool _hasSignificantChange(TurnScreenData oldData, TurnScreenData newData) {
-    // Cambio en el turno que se está atendiendo
-    if (oldData.currentlyBeingServed?.id != newData.currentlyBeingServed?.id) {
-      return true;
-    }
+    try {
+      // Cambio en el turno que se está atendiendo
+      final oldCurrentId = oldData.currentlyBeingServed?.id;
+      final newCurrentId = newData.currentlyBeingServed?.id;
 
-    // Cambio en la cantidad de turnos en espera (nuevo turno agregado)
-    if (newData.waitingQueue.length > oldData.waitingQueue.length) {
-      return true;
-    }
+      if (oldCurrentId != newCurrentId) {
+        print(
+          '🔔 Cambio detectado en turno atendido: $oldCurrentId -> $newCurrentId',
+        );
+        return true;
+      }
 
-    return false;
+      // Cambio en la cantidad de turnos en espera (nuevo turno agregado)
+      final oldQueueLength = oldData.waitingQueue.length;
+      final newQueueLength = newData.waitingQueue.length;
+
+      if (newQueueLength > oldQueueLength) {
+        print(
+          '🔔 Nuevo turno en espera detectado: $oldQueueLength -> $newQueueLength',
+        );
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      print('❌ Error en _hasSignificantChange: $e');
+      return false; // En caso de error, no reproducir sonido
+    }
   }
 
   /// Detiene todos los listeners activos
@@ -159,6 +189,8 @@ class TurnDisplayController extends ChangeNotifier {
     _isLoadingServices = false;
     _pharmacyError = null;
     _servicesError = null;
+    _isFirstPharmacyLoad = true;
+    _isFirstServicesLoad = true;
     notifyListeners();
   }
 
