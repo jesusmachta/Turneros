@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http;
 import '../models/queue_client_model.dart';
 import '../models/service_model.dart';
 
@@ -15,25 +13,7 @@ class QueueService {
   // Referencias a los listeners para poder cancelarlos
   final Map<String, List<StreamSubscription>> _listeners = {};
 
-  // URLs para las acciones de los botones (mantenemos estas para las acciones POST)
-  static const String _startAttendingPharmacyUrl =
-      'https://startattendingpharmacy-228344336816.us-central1.run.app';
-  static const String _startAttendingServiceUrl =
-      'https://startattendingservice-228344336816.us-central1.run.app';
-  static const String _finishAttendingPharmacyUrl =
-      'https://finishattendingpharmacy-228344336816.us-central1.run.app';
-  static const String _finishAttendingServiceUrl =
-      'https://finishattendingservice-228344336816.us-central1.run.app';
-  static const String _cancelTurnPharmacyUrl =
-      'https://cancelturnpharmacy-228344336816.us-central1.run.app';
-  static const String _cancelTurnServiceUrl =
-      'https://cancelturnservice-228344336816.us-central1.run.app';
-
-  // URLs para servicios activos y transferencias
-  static const String _activeServicesUrl =
-      'https://activeservices-228344336816.us-central1.run.app';
-  static const String _transferToServiceUrl =
-      'https://transfertoservice-228344336816.us-central1.run.app';
+  // URLs legacy removidas - ahora todo usa Firestore directo
 
   /// Obtiene un stream de clientes en espera en farmacia
   Stream<List<QueueClientModel>> getPharmacyWaitingClientsStream(int storeId) {
@@ -228,97 +208,196 @@ class QueueService {
   }
 
   // ===========================================
-  // MÉTODOS PARA LAS ACCIONES DE LOS BOTONES
+  // MÉTODOS FIRESTORE PARA ACCIONES DE BOTONES (REAL-TIME)
   // ===========================================
 
-  /// Inicia la atención de un cliente en farmacia
+  /// Inicia la atención de un cliente en farmacia (Firestore directo)
   Future<bool> startAttendingPharmacy(int storeId, String turnId) async {
-    return await _performAction(
-      _startAttendingPharmacyUrl,
-      storeId,
-      turnId,
-      'iniciar atención en farmacia',
-    );
-  }
-
-  /// Inicia la atención de un cliente en servicios farmacéuticos
-  Future<bool> startAttendingService(int storeId, String turnId) async {
-    return await _performAction(
-      _startAttendingServiceUrl,
-      storeId,
-      turnId,
-      'iniciar atención en servicios',
-    );
-  }
-
-  /// Finaliza la atención de un cliente en farmacia
-  Future<bool> finishAttendingPharmacy(int storeId, String turnId) async {
-    return await _performAction(
-      _finishAttendingPharmacyUrl,
-      storeId,
-      turnId,
-      'finalizar atención en farmacia',
-    );
-  }
-
-  /// Finaliza la atención de un cliente en servicios farmacéuticos
-  Future<bool> finishAttendingService(int storeId, String turnId) async {
-    return await _performAction(
-      _finishAttendingServiceUrl,
-      storeId,
-      turnId,
-      'finalizar atención en servicios',
-    );
-  }
-
-  /// Cancela un turno en farmacia
-  Future<bool> cancelTurnPharmacy(int storeId, String turnId) async {
-    return await _performAction(
-      _cancelTurnPharmacyUrl,
-      storeId,
-      turnId,
-      'cancelar turno en farmacia',
-    );
-  }
-
-  /// Cancela un turno en servicios farmacéuticos
-  Future<bool> cancelTurnService(int storeId, String turnId) async {
-    return await _performAction(
-      _cancelTurnServiceUrl,
-      storeId,
-      turnId,
-      'cancelar turno en servicios',
-    );
-  }
-
-  /// Obtiene los servicios activos para transferencia
-  Future<List<ServiceModel>> getActiveServices(int storeId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$_activeServicesUrl?storeid=$storeId'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      print('🚀 Iniciando atención en farmacia: $turnId');
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data
-            .map((item) => ServiceModel.fromJson(item))
-            .where((service) => service.active && service.type == 'Servicio')
-            .toList();
-      } else if (response.statusCode == 404) {
-        // No hay servicios activos
-        return [];
-      } else {
-        throw Exception(
-          'Error al obtener servicios activos: ${response.statusCode}',
-        );
-      }
+      final turnDocRef = _firestore
+          .collection('Turns_Store')
+          .doc(storeId.toString())
+          .collection('Turns_Pharmacy')
+          .doc(turnId);
+
+      await turnDocRef.update({
+        'state': 'Atendiendo',
+        'Served_At': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Turno $turnId marcado como Atendiendo en farmacia');
+      return true;
     } catch (e) {
-      throw Exception('Error de conexión: $e');
+      print('❌ Error al iniciar atención en farmacia: $e');
+      throw Exception('Error al iniciar atención en farmacia: $e');
     }
   }
 
-  /// Transfiere un cliente a un servicio
+  /// Inicia la atención de un cliente en servicios farmacéuticos (Firestore directo)
+  Future<bool> startAttendingService(int storeId, String turnId) async {
+    try {
+      print('🚀 Iniciando atención en servicios: $turnId');
+
+      final turnDocRef = _firestore
+          .collection('Turns_Store')
+          .doc(storeId.toString())
+          .collection('Turns_Services')
+          .doc(turnId);
+
+      await turnDocRef.update({
+        'state': 'Atendiendo',
+        'Served_At': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Turno $turnId marcado como Atendiendo en servicios');
+      return true;
+    } catch (e) {
+      print('❌ Error al iniciar atención en servicios: $e');
+      throw Exception('Error al iniciar atención en servicios: $e');
+    }
+  }
+
+  /// Finaliza la atención de un cliente en farmacia (Firestore directo)
+  Future<bool> finishAttendingPharmacy(int storeId, String turnId) async {
+    try {
+      print('🏁 Finalizando atención en farmacia: $turnId');
+
+      final turnDocRef = _firestore
+          .collection('Turns_Store')
+          .doc(storeId.toString())
+          .collection('Turns_Pharmacy')
+          .doc(turnId);
+
+      await turnDocRef.update({
+        'state': 'Finalizado',
+        'Finished_At': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Turno $turnId marcado como Finalizado en farmacia');
+      return true;
+    } catch (e) {
+      print('❌ Error al finalizar atención en farmacia: $e');
+      throw Exception('Error al finalizar atención en farmacia: $e');
+    }
+  }
+
+  /// Finaliza la atención de un cliente en servicios farmacéuticos (Firestore directo)
+  Future<bool> finishAttendingService(int storeId, String turnId) async {
+    try {
+      print('🏁 Finalizando atención en servicios: $turnId');
+
+      final turnDocRef = _firestore
+          .collection('Turns_Store')
+          .doc(storeId.toString())
+          .collection('Turns_Services')
+          .doc(turnId);
+
+      await turnDocRef.update({
+        'state': 'Finalizado',
+        'Finished_At': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Turno $turnId marcado como Finalizado en servicios');
+      return true;
+    } catch (e) {
+      print('❌ Error al finalizar atención en servicios: $e');
+      throw Exception('Error al finalizar atención en servicios: $e');
+    }
+  }
+
+  /// Cancela un turno en farmacia (Firestore directo)
+  Future<bool> cancelTurnPharmacy(int storeId, String turnId) async {
+    try {
+      print('❌ Cancelando turno en farmacia: $turnId');
+
+      final turnDocRef = _firestore
+          .collection('Turns_Store')
+          .doc(storeId.toString())
+          .collection('Turns_Pharmacy')
+          .doc(turnId);
+
+      await turnDocRef.update({
+        'state': 'Cancelado',
+        'Cancel_At': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Turno $turnId marcado como Cancelado en farmacia');
+      return true;
+    } catch (e) {
+      print('❌ Error al cancelar turno en farmacia: $e');
+      throw Exception('Error al cancelar turno en farmacia: $e');
+    }
+  }
+
+  /// Cancela un turno en servicios farmacéuticos (Firestore directo)
+  Future<bool> cancelTurnService(int storeId, String turnId) async {
+    try {
+      print('❌ Cancelando turno en servicios: $turnId');
+
+      final turnDocRef = _firestore
+          .collection('Turns_Store')
+          .doc(storeId.toString())
+          .collection('Turns_Services')
+          .doc(turnId);
+
+      await turnDocRef.update({
+        'state': 'Cancelado',
+        'Cancel_At': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Turno $turnId marcado como Cancelado en servicios');
+      return true;
+    } catch (e) {
+      print('❌ Error al cancelar turno en servicios: $e');
+      throw Exception('Error al cancelar turno en servicios: $e');
+    }
+  }
+
+  /// Obtiene los servicios activos para transferencia (Firestore directo)
+  Future<List<ServiceModel>> getActiveServices(int storeId) async {
+    try {
+      print(
+        '🔍 Obteniendo servicios activos desde Firestore para store: $storeId',
+      );
+
+      final storeDoc =
+          await _firestore
+              .collection('Turns_Store')
+              .doc(storeId.toString())
+              .get();
+
+      if (!storeDoc.exists) {
+        print('⚠️ Store $storeId no encontrado');
+        return [];
+      }
+
+      final storeData = storeDoc.data();
+      final allServices = storeData?['services'] as List<dynamic>? ?? [];
+
+      // Filtrar solo servicios activos de tipo 'Servicio'
+      final activeServices =
+          allServices
+              .where(
+                (service) =>
+                    service['active'] == true && service['type'] == 'Servicio',
+              )
+              .map(
+                (service) =>
+                    ServiceModel.fromFirestore(service as Map<String, dynamic>),
+              )
+              .toList();
+
+      print('✅ Servicios activos obtenidos: ${activeServices.length}');
+      return activeServices;
+    } catch (e) {
+      print('❌ Error al obtener servicios activos: $e');
+      throw Exception('Error al obtener servicios activos: $e');
+    }
+  }
+
+  /// Transfiere un cliente a un servicio (Firestore directo con transacción)
   Future<bool> transferToService(
     int storeId,
     String originalTurnId,
@@ -326,54 +405,71 @@ class QueueService {
     String serviceType,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse(_transferToServiceUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'storeid': storeId.toString(),
-          'originalTurnId': originalTurnId,
-          'name': serviceName,
-          'type': serviceType,
-        }),
-      );
+      print('🔄 Transfiriendo turno $originalTurnId a servicio: $serviceName');
 
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        throw Exception(
-          'Error al transferir cliente: ${response.statusCode} - ${response.body}',
+      // Ejecutar transferencia en una transacción para consistencia
+      await _firestore.runTransaction((transaction) async {
+        // Referencias a los documentos
+        final storeRef = _firestore
+            .collection('Turns_Store')
+            .doc(storeId.toString());
+        final originalTurnRef = storeRef
+            .collection('Turns_Pharmacy')
+            .doc(originalTurnId);
+
+        // 1. Leer documentos necesarios
+        final storeDoc = await transaction.get(storeRef);
+        final originalTurnDoc = await transaction.get(originalTurnRef);
+
+        if (!storeDoc.exists) {
+          throw Exception('Store $storeId no encontrado');
+        }
+        if (!originalTurnDoc.exists) {
+          throw Exception('Turno original $originalTurnId no encontrado');
+        }
+
+        final storeData = storeDoc.data()!;
+        final originalTurnData = originalTurnDoc.data()!;
+
+        // 2. Obtener nuevo número de turno para servicios
+        final serviceTurnNumber = storeData['Turns_Services'] ?? 1;
+
+        // 3. Crear nuevo turno en Turns_Services
+        final newServiceTurnRef = storeRef.collection('Turns_Services').doc();
+        final newServiceTurnData = {
+          'storeid': storeId,
+          'cedula': originalTurnData['cedula'],
+          'documento': originalTurnData['documento'],
+          'country': originalTurnData['country'],
+          'comes_from': serviceName,
+          'state': 'Esperando',
+          'Turn': serviceTurnNumber,
+          'Created_At': FieldValue.serverTimestamp(),
+        };
+
+        // 4. Realizar todas las escrituras en la transacción
+        transaction.set(newServiceTurnRef, newServiceTurnData);
+
+        transaction.update(storeRef, {'Turns_Services': serviceTurnNumber + 1});
+
+        transaction.update(originalTurnRef, {
+          'state': 'Transferido',
+          'Served_At': FieldValue.serverTimestamp(),
+        });
+
+        print(
+          '✅ Transferencia completada: turno #$serviceTurnNumber creado en servicios',
         );
-      }
+      });
+
+      return true;
     } catch (e) {
-      throw Exception('Error de conexión al transferir cliente: $e');
+      print('❌ Error al transferir cliente: $e');
+      throw Exception('Error al transferir cliente: $e');
     }
   }
 
-  /// Método genérico para realizar acciones POST (mantenemos esto sin cambios)
-  Future<bool> _performAction(
-    String url,
-    int storeId,
-    String turnId,
-    String actionDescription,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'storeid': storeId.toString(), 'turnId': turnId}),
-      );
-
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        throw Exception(
-          'Error $actionDescription: ${response.statusCode} - ${response.body}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Error de conexión al $actionDescription: $e');
-    }
-  }
+  // Método _performAction removido - ya no se necesita con Firestore directo
 
   /// Cancela todos los listeners y libera recursos
   void dispose() {
