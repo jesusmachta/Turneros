@@ -58,14 +58,12 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
         run: |
-          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > $HOME/gcp-key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-key.json
+          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
 
       # 🚀 UPDATED: Deploy without token (usa Service Account)
       - name: Deploy to Firebase Hosting
         working-directory: Frontend/turneros_app
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcp-key.json
         run: |
           firebase deploy --only hosting:turneros --project farmaturnos
 
