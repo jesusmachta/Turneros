@@ -53,12 +53,21 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      # 🔑 NEW: Authenticate with Service Account (NO expira)
+      - name: Authenticate with Firebase
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        run: |
+          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > $HOME/gcp-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-key.json
+
+      # 🚀 UPDATED: Deploy without token (usa Service Account)
       - name: Deploy to Firebase Hosting
         working-directory: Frontend/turneros_app
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcp-key.json
         run: |
-          firebase deploy --only hosting:turneros --project farmaturnos --token "$FIREBASE_TOKEN"
+          firebase deploy --only hosting:turneros --project farmaturnos
 
       - name: Comment PR
         if: github.event_name == 'pull_request'
