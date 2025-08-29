@@ -60,38 +60,34 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
     final isMediumScreen = screenWidth >= 700 && screenWidth < 1100;
     final isLargeScreen = screenWidth >= 1100 && screenWidth < 1500;
 
-    final logoHeight =
-        isSmallScreen
-            ? 30.0
-            : isMediumScreen
+    final logoHeight = isSmallScreen
+        ? 30.0
+        : isMediumScreen
             ? 40.0
             : isLargeScreen
-            ? 50.0
-            : 60.0;
-    final headerPadding =
-        isSmallScreen
-            ? 12.0
-            : isMediumScreen
+                ? 50.0
+                : 60.0;
+    final headerPadding = isSmallScreen
+        ? 12.0
+        : isMediumScreen
             ? 16.0
             : isLargeScreen
-            ? 18.0
-            : 20.0;
-    final contentPadding =
-        isSmallScreen
-            ? 12.0
-            : isMediumScreen
+                ? 18.0
+                : 20.0;
+    final contentPadding = isSmallScreen
+        ? 12.0
+        : isMediumScreen
             ? 20.0
             : isLargeScreen
-            ? 28.0
-            : 36.0;
-    final columnSpacing =
-        isSmallScreen
-            ? 12.0
-            : isMediumScreen
+                ? 28.0
+                : 36.0;
+    final columnSpacing = isSmallScreen
+        ? 12.0
+        : isMediumScreen
             ? 20.0
             : isLargeScreen
-            ? 32.0
-            : 40.0;
+                ? 32.0
+                : 40.0;
 
     return ChangeNotifierProvider<TurnDisplayController>.value(
       value: _turnDisplayController,
@@ -197,54 +193,48 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
     final isLargeScreen = screenWidth >= 1100 && screenWidth < 1500;
 
     // Tamaños de fuente más responsivos
-    final titleFontSize =
-        isSmallScreen
-            ? 22.0
-            : isMediumScreen
+    final titleFontSize = isSmallScreen
+        ? 22.0
+        : isMediumScreen
             ? 28.0
             : isLargeScreen
-            ? 34.0
-            : 42.0;
-    final attentionFontSize =
-        isSmallScreen
-            ? 15.0
-            : isMediumScreen
+                ? 34.0
+                : 42.0;
+    final attentionFontSize = isSmallScreen
+        ? 15.0
+        : isMediumScreen
             ? 18.0
             : isLargeScreen
-            ? 22.0
-            : 26.0;
-    final currentTurnFontSize =
-        isSmallScreen
-            ? 52.0
-            : isMediumScreen
+                ? 22.0
+                : 26.0;
+    final currentTurnFontSize = isSmallScreen
+        ? 52.0
+        : isMediumScreen
             ? 70.0
             : isLargeScreen
-            ? 88.0
-            : 110.0;
-    final sectionTitleFontSize =
-        isSmallScreen
-            ? 18.0
-            : isMediumScreen
+                ? 88.0
+                : 110.0;
+    final sectionTitleFontSize = isSmallScreen
+        ? 18.0
+        : isMediumScreen
             ? 24.0
             : isLargeScreen
-            ? 30.0
-            : 36.0;
-    final containerPadding =
-        isSmallScreen
-            ? 14.0
-            : isMediumScreen
+                ? 30.0
+                : 36.0;
+    final containerPadding = isSmallScreen
+        ? 14.0
+        : isMediumScreen
             ? 18.0
             : isLargeScreen
-            ? 22.0
-            : 28.0;
-    final verticalPadding =
-        isSmallScreen
-            ? 22.0
-            : isMediumScreen
+                ? 22.0
+                : 28.0;
+    final verticalPadding = isSmallScreen
+        ? 22.0
+        : isMediumScreen
             ? 28.0
             : isLargeScreen
-            ? 36.0
-            : 44.0;
+                ? 36.0
+                : 44.0;
 
     return Container(
       decoration: BoxDecoration(
@@ -288,14 +278,13 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
                   ),
                 ),
                 SizedBox(
-                  height:
-                      isSmallScreen
-                          ? 16
-                          : isMediumScreen
+                  height: isSmallScreen
+                      ? 16
+                      : isMediumScreen
                           ? 20
                           : isLargeScreen
-                          ? 28
-                          : 32,
+                              ? 28
+                              : 32,
                 ),
                 Text(
                   'En Atención',
@@ -306,36 +295,33 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
                   ),
                 ),
                 SizedBox(
-                  height:
-                      isSmallScreen
-                          ? 12
-                          : isMediumScreen
+                  height: isSmallScreen
+                      ? 12
+                      : isMediumScreen
                           ? 16
                           : isLargeScreen
-                          ? 20
-                          : 24,
+                              ? 20
+                              : 24,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (isLoading && currentTurn == '--')
                       Container(
-                        width:
-                            isSmallScreen
-                                ? 40
-                                : isMediumScreen
+                        width: isSmallScreen
+                            ? 40
+                            : isMediumScreen
                                 ? 50
                                 : isLargeScreen
-                                ? 60
-                                : 70,
-                        height:
-                            isSmallScreen
-                                ? 40
-                                : isMediumScreen
+                                    ? 60
+                                    : 70,
+                        height: isSmallScreen
+                            ? 40
+                            : isMediumScreen
                                 ? 50
                                 : isLargeScreen
-                                ? 60
-                                : 70,
+                                    ? 60
+                                    : 70,
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.1),
                           shape: BoxShape.circle,
@@ -385,32 +371,29 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
                   Center(
                     child: Container(
                       constraints: BoxConstraints(
-                        maxWidth:
-                            isSmallScreen
-                                ? 280
-                                : isMediumScreen
+                        maxWidth: isSmallScreen
+                            ? 280
+                            : isMediumScreen
                                 ? 300
                                 : isLargeScreen
-                                ? 350
-                                : 400,
+                                    ? 350
+                                    : 400,
                       ),
                       padding: EdgeInsets.symmetric(
-                        vertical:
-                            isSmallScreen
-                                ? 8
-                                : isMediumScreen
+                        vertical: isSmallScreen
+                            ? 8
+                            : isMediumScreen
                                 ? 10
                                 : isLargeScreen
-                                ? 12
-                                : 14,
-                        horizontal:
-                            isSmallScreen
-                                ? 20
-                                : isMediumScreen
+                                    ? 12
+                                    : 14,
+                        horizontal: isSmallScreen
+                            ? 20
+                            : isMediumScreen
                                 ? 28
                                 : isLargeScreen
-                                ? 36
-                                : 44,
+                                    ? 36
+                                    : 44,
                       ),
                       decoration: BoxDecoration(
                         color: lightGrey.withOpacity(0.5),
@@ -430,14 +413,13 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
                   ),
 
                   SizedBox(
-                    height:
-                        isSmallScreen
-                            ? 16
-                            : isMediumScreen
+                    height: isSmallScreen
+                        ? 16
+                        : isMediumScreen
                             ? 20
                             : isLargeScreen
-                            ? 28
-                            : 32,
+                                ? 28
+                                : 32,
                   ),
 
                   // Lista de próximos turnos
@@ -470,70 +452,62 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
     final isLargeScreen = screenWidth >= 1100 && screenWidth < 1500;
 
     // Tamaños de íconos y fuentes responsivos
-    final iconSize =
-        isSmallScreen
-            ? 34.0
-            : isMediumScreen
+    final iconSize = isSmallScreen
+        ? 34.0
+        : isMediumScreen
             ? 42.0
             : isLargeScreen
-            ? 52.0
-            : 64.0;
-    final errorFontSize =
-        isSmallScreen
-            ? 16.0
-            : isMediumScreen
+                ? 52.0
+                : 64.0;
+    final errorFontSize = isSmallScreen
+        ? 16.0
+        : isMediumScreen
             ? 18.0
             : isLargeScreen
-            ? 22.0
-            : 26.0;
-    final emptyFontSize =
-        isSmallScreen
-            ? 16.0
-            : isMediumScreen
+                ? 22.0
+                : 26.0;
+    final emptyFontSize = isSmallScreen
+        ? 16.0
+        : isMediumScreen
             ? 18.0
             : isLargeScreen
-            ? 22.0
-            : 26.0;
-    final turnoFontSize =
-        isSmallScreen
-            ? 18.0
-            : isMediumScreen
+                ? 22.0
+                : 26.0;
+    final turnoFontSize = isSmallScreen
+        ? 18.0
+        : isMediumScreen
             ? 22.0
             : isLargeScreen
-            ? 26.0
-            : 30.0;
-    final numberFontSize =
-        isSmallScreen
-            ? 20.0
-            : isMediumScreen
+                ? 26.0
+                : 30.0;
+    final numberFontSize = isSmallScreen
+        ? 20.0
+        : isMediumScreen
             ? 24.0
             : isLargeScreen
-            ? 28.0
-            : 32.0;
-    final esperandoFontSize =
-        isSmallScreen
-            ? 14.0
-            : isMediumScreen
+                ? 28.0
+                : 32.0;
+    final esperandoFontSize = isSmallScreen
+        ? 14.0
+        : isMediumScreen
             ? 16.0
             : isLargeScreen
-            ? 18.0
-            : 20.0;
-    final itemPadding =
-        isSmallScreen
-            ? 12.0
-            : isMediumScreen
+                ? 18.0
+                : 20.0;
+    final itemPadding = isSmallScreen
+        ? 12.0
+        : isMediumScreen
             ? 14.0
             : isLargeScreen
-            ? 18.0
-            : 22.0;
-    final itemMargin =
-        isSmallScreen
-            ? 8.0
-            : isMediumScreen
+                ? 18.0
+                : 22.0;
+    final itemMargin = isSmallScreen
+        ? 8.0
+        : isMediumScreen
             ? 10.0
             : isLargeScreen
-            ? 14.0
-            : 18.0;
+                ? 14.0
+                : 18.0;
 
     return Stack(
       children: [
@@ -549,14 +523,13 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
                   size: iconSize,
                 ),
                 SizedBox(
-                  height:
-                      isSmallScreen
-                          ? 15
-                          : isMediumScreen
+                  height: isSmallScreen
+                      ? 15
+                      : isMediumScreen
                           ? 18
                           : isLargeScreen
-                          ? 22
-                          : 25,
+                              ? 22
+                              : 25,
                 ),
                 Text(
                   'Error al cargar',
@@ -580,14 +553,13 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
                   size: iconSize,
                 ),
                 SizedBox(
-                  height:
-                      isSmallScreen
-                          ? 15
-                          : isMediumScreen
+                  height: isSmallScreen
+                      ? 15
+                      : isMediumScreen
                           ? 18
                           : isLargeScreen
-                          ? 22
-                          : 25,
+                              ? 22
+                              : 25,
                 ),
                 Text(
                   'No hay turnos\nen espera',
@@ -615,40 +587,37 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
                 child: Container(
                   width: double.infinity,
                   constraints: BoxConstraints(
-                    maxWidth:
-                        isSmallScreen
-                            ? 280
-                            : isMediumScreen
+                    maxWidth: isSmallScreen
+                        ? 280
+                        : isMediumScreen
                             ? 320
                             : isLargeScreen
-                            ? 380
-                            : 420,
+                                ? 380
+                                : 420,
                   ),
                   margin: EdgeInsets.only(bottom: itemMargin),
                   padding: EdgeInsets.symmetric(
                     vertical: itemPadding,
-                    horizontal:
-                        isSmallScreen
-                            ? 16
-                            : isMediumScreen
+                    horizontal: isSmallScreen
+                        ? 16
+                        : isMediumScreen
                             ? 20
                             : isLargeScreen
-                            ? 28
-                            : 32,
+                                ? 28
+                                : 32,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: Colors.grey[300]!,
-                      width:
-                          isSmallScreen
-                              ? 1.5
-                              : isMediumScreen
+                      width: isSmallScreen
+                          ? 1.5
+                          : isMediumScreen
                               ? 2
                               : isLargeScreen
-                              ? 2
-                              : 3,
+                                  ? 2
+                                  : 3,
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -686,22 +655,20 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
                       ),
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal:
-                              isSmallScreen
-                                  ? 12
-                                  : isMediumScreen
+                          horizontal: isSmallScreen
+                              ? 12
+                              : isMediumScreen
                                   ? 14
                                   : isLargeScreen
-                                  ? 18
-                                  : 20,
-                          vertical:
-                              isSmallScreen
-                                  ? 6
-                                  : isMediumScreen
+                                      ? 18
+                                      : 20,
+                          vertical: isSmallScreen
+                              ? 6
+                              : isMediumScreen
                                   ? 8
                                   : isLargeScreen
-                                  ? 10
-                                  : 12,
+                                      ? 10
+                                      : 12,
                         ),
                         decoration: BoxDecoration(
                           color: orangeWaiting.withOpacity(0.1),
@@ -733,22 +700,20 @@ class _TurnDisplayViewState extends State<TurnDisplayView> {
               ),
               child: Center(
                 child: SizedBox(
-                  width:
-                      isSmallScreen
-                          ? 20
-                          : isMediumScreen
+                  width: isSmallScreen
+                      ? 20
+                      : isMediumScreen
                           ? 25
                           : isLargeScreen
-                          ? 35
-                          : 40,
-                  height:
-                      isSmallScreen
-                          ? 20
-                          : isMediumScreen
+                              ? 35
+                              : 40,
+                  height: isSmallScreen
+                      ? 20
+                      : isMediumScreen
                           ? 25
                           : isLargeScreen
-                          ? 35
-                          : 40,
+                              ? 35
+                              : 40,
                   child: const CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(
                       Color.fromARGB(

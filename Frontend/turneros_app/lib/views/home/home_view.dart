@@ -66,29 +66,28 @@ class _HomeViewState extends State<HomeView> {
       print('🚀 Iniciando listener de métricas para Store ID: $storeId');
 
       // Configurar el listener del stream
-      _statsSubscription = _dashboardService
-          .getDashboardStatsStream(storeId)
-          .listen(
-            (stats) {
-              if (mounted) {
-                setState(() {
-                  _stats = stats;
-                  _isLoading = false;
-                });
-              }
-              print(
-                '✅ Métricas dashboard actualizadas: A=${stats.clientesAtendidos}, E=${stats.clientesEnAtencion}, Es=${stats.clientesEnEspera}, C=${stats.clientesCancelados}',
-              );
-            },
-            onError: (error) {
-              print('❌ Error en listener de métricas: $error');
-              if (mounted) {
-                setState(() {
-                  _isLoading = false;
-                });
-              }
-            },
+      _statsSubscription =
+          _dashboardService.getDashboardStatsStream(storeId).listen(
+        (stats) {
+          if (mounted) {
+            setState(() {
+              _stats = stats;
+              _isLoading = false;
+            });
+          }
+          print(
+            '✅ Métricas dashboard actualizadas: A=${stats.clientesAtendidos}, E=${stats.clientesEnAtencion}, Es=${stats.clientesEnEspera}, C=${stats.clientesCancelados}',
           );
+        },
+        onError: (error) {
+          print('❌ Error en listener de métricas: $error');
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        },
+      );
     }
   }
 
@@ -202,19 +201,18 @@ class _HomeViewState extends State<HomeView> {
                   color: Colors.white,
                   size: 24,
                 ),
-                itemBuilder:
-                    (context) => [
-                      const PopupMenuItem(
-                        value: 'logout',
-                        child: Row(
-                          children: [
-                            Icon(Icons.exit_to_app, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Cerrar Sesión'),
-                          ],
-                        ),
-                      ),
-                    ],
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.exit_to_app, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Cerrar Sesión'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -549,25 +547,24 @@ class _HomeViewState extends State<HomeView> {
   Future<void> _handleLogout(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Cerrar Sesión'),
-            content: const Text('¿Está seguro que desea cerrar sesión?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Cerrar Sesión'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar Sesión'),
+        content: const Text('¿Está seguro que desea cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
           ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
     );
 
     if (confirmed == true && context.mounted) {

@@ -194,118 +194,117 @@ class _DocumentInputViewState extends State<DocumentInputView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        contentPadding: const EdgeInsets.all(32),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icono de éxito con círculo verde
+            Container(
+              width: 80,
+              height: 80,
+              decoration: const BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check, color: Colors.white, size: 48),
             ),
-            contentPadding: const EdgeInsets.all(32),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icono de éxito con círculo verde
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
+
+            const SizedBox(height: 24),
+
+            // Título centrado
+            const Text(
+              '¡Turno Creado!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: primaryBlue,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Mensaje centrado
+            const Text(
+              'Tu turno ha sido creado exitosamente.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Contenedor con información del servicio
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Servicio: ${widget.service.name}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: primaryBlue,
+                    ),
                   ),
-                  child: const Icon(Icons.check, color: Colors.white, size: 48),
-                ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                // Título centrado
-                const Text(
-                  '¡Turno Creado!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: primaryBlue,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Mensaje centrado
-                const Text(
-                  'Tu turno ha sido creado exitosamente.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Contenedor con información del servicio
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Servicio: ${widget.service.name}',
-                        textAlign: TextAlign.center,
+                  // Número de turno en grande
+                  if (turnData['turnNumber'] != null) ...[
+                    const Text(
+                      'Tu número es:',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 24,
+                      ),
+                      decoration: BoxDecoration(
+                        color: primaryBlue,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${turnData['turnNumber']}',
                         style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: primaryBlue,
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Número de turno en grande
-                      if (turnData['turnNumber'] != null) ...[
-                        const Text(
-                          'Tu número es:',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 24,
-                          ),
-                          decoration: BoxDecoration(
-                            color: primaryBlue,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${turnData['turnNumber']}',
-                            style: const TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                const Text(
-                  'Regresando automáticamente...',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
+
+            const SizedBox(height: 24),
+
+            const Text(
+              'Regresando automáticamente...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
 
     // Cerrar automáticamente después de 6 segundos
@@ -428,13 +427,12 @@ class _DocumentInputViewState extends State<DocumentInputView> {
                     value: _selectedDocumentType,
                     isExpanded: true,
                     style: const TextStyle(fontSize: 14, color: Colors.black87),
-                    items:
-                        _documentTypes.map((String type) {
-                          return DropdownMenuItem<String>(
-                            value: type,
-                            child: Text(type, overflow: TextOverflow.ellipsis),
-                          );
-                        }).toList(),
+                    items: _documentTypes.map((String type) {
+                      return DropdownMenuItem<String>(
+                        value: type,
+                        child: Text(type, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
                     onChanged: (String? newValue) {
                       setState(() {
                         _selectedDocumentType = newValue;
@@ -461,10 +459,9 @@ class _DocumentInputViewState extends State<DocumentInputView> {
                   _documentNumber.isEmpty ? 'N° de Documento' : _documentNumber,
                   style: TextStyle(
                     fontSize: 16,
-                    color:
-                        _documentNumber.isEmpty
-                            ? Colors.grey.shade500
-                            : Colors.black87,
+                    color: _documentNumber.isEmpty
+                        ? Colors.grey.shade500
+                        : Colors.black87,
                   ),
                 ),
               ),
@@ -602,27 +599,26 @@ class _DocumentInputViewState extends State<DocumentInputView> {
                   ],
                 ),
                 child: Center(
-                  child:
-                      isDelete
-                          ? Icon(
-                            Icons.backspace_outlined,
-                            size: iconSize.clamp(
-                              20.0,
-                              40.0,
-                            ), // Mínimo 20, máximo 40
+                  child: isDelete
+                      ? Icon(
+                          Icons.backspace_outlined,
+                          size: iconSize.clamp(
+                            20.0,
+                            40.0,
+                          ), // Mínimo 20, máximo 40
+                          color: primaryBlue,
+                        )
+                      : Text(
+                          text,
+                          style: TextStyle(
+                            fontSize: fontSize.clamp(
+                              24.0,
+                              56.0,
+                            ), // Mínimo 24, máximo 56
+                            fontWeight: FontWeight.bold,
                             color: primaryBlue,
-                          )
-                          : Text(
-                            text,
-                            style: TextStyle(
-                              fontSize: fontSize.clamp(
-                                24.0,
-                                56.0,
-                              ), // Mínimo 24, máximo 56
-                              fontWeight: FontWeight.bold,
-                              color: primaryBlue,
-                            ),
                           ),
+                        ),
                 ),
               ),
             ),
@@ -633,8 +629,7 @@ class _DocumentInputViewState extends State<DocumentInputView> {
   }
 
   Widget _buildRequestButton() {
-    final bool isEnabled =
-        _documentNumber.length >= 6 &&
+    final bool isEnabled = _documentNumber.length >= 6 &&
         _documentNumber.length <= 15 &&
         _selectedDocumentType != null &&
         RegExp(r'^\d+$').hasMatch(_documentNumber) &&
@@ -655,20 +650,19 @@ class _DocumentInputViewState extends State<DocumentInputView> {
           ),
           elevation: isEnabled ? 4 : 0,
         ),
-        child:
-            _isLoading
-                ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-                : const Text(
-                  'Pedir Turno',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        child: _isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
+              )
+            : const Text(
+                'Pedir Turno',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
       ),
     );
   }

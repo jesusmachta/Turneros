@@ -65,32 +65,31 @@ class _RequestTurnViewState extends State<RequestTurnView> {
       });
 
       // Configurar el listener del stream
-      _servicesSubscription = _servicesApiService
-          .getServicesStream(storeId: storeId)
-          .listen(
-            (services) {
-              if (mounted) {
-                setState(() {
-                  _services =
-                      services; // Ya filtrados por active = true en el servicio
-                  _isLoading = false;
-                  _error = null;
-                });
-                print(
-                  '✅ Servicios actualizados: ${services.length} servicios activos',
-                );
-              }
-            },
-            onError: (error) {
-              if (mounted) {
-                setState(() {
-                  _error = error.toString();
-                  _isLoading = false;
-                });
-                print('❌ Error en listener de servicios: $error');
-              }
-            },
-          );
+      _servicesSubscription =
+          _servicesApiService.getServicesStream(storeId: storeId).listen(
+        (services) {
+          if (mounted) {
+            setState(() {
+              _services =
+                  services; // Ya filtrados por active = true en el servicio
+              _isLoading = false;
+              _error = null;
+            });
+            print(
+              '✅ Servicios actualizados: ${services.length} servicios activos',
+            );
+          }
+        },
+        onError: (error) {
+          if (mounted) {
+            setState(() {
+              _error = error.toString();
+              _isLoading = false;
+            });
+            print('❌ Error en listener de servicios: $error');
+          }
+        },
+      );
     });
   }
 
@@ -307,14 +306,13 @@ class _RequestTurnViewState extends State<RequestTurnView> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child:
-                        service.iconUrl.isNotEmpty
-                            ? _buildServiceImage(service.iconUrl)
-                            : const Icon(
-                              Icons.local_pharmacy,
-                              color: primaryBlue,
-                              size: 32,
-                            ),
+                    child: service.iconUrl.isNotEmpty
+                        ? _buildServiceImage(service.iconUrl)
+                        : const Icon(
+                            Icons.local_pharmacy,
+                            color: primaryBlue,
+                            size: 32,
+                          ),
                   ),
                 ),
 
@@ -433,118 +431,117 @@ class _RequestTurnViewState extends State<RequestTurnView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        contentPadding: const EdgeInsets.all(32),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icono de éxito con círculo verde
+            Container(
+              width: 80,
+              height: 80,
+              decoration: const BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check, color: Colors.white, size: 48),
             ),
-            contentPadding: const EdgeInsets.all(32),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icono de éxito con círculo verde
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
+
+            const SizedBox(height: 24),
+
+            // Título centrado
+            const Text(
+              '¡Turno Creado!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: primaryBlue,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Mensaje centrado
+            const Text(
+              'Tu turno ha sido creado exitosamente.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Contenedor con información del servicio
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Servicio: ${service.name}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: primaryBlue,
+                    ),
                   ),
-                  child: const Icon(Icons.check, color: Colors.white, size: 48),
-                ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                // Título centrado
-                const Text(
-                  '¡Turno Creado!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: primaryBlue,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Mensaje centrado
-                const Text(
-                  'Tu turno ha sido creado exitosamente.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Contenedor con información del servicio
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Servicio: ${service.name}',
-                        textAlign: TextAlign.center,
+                  // Número de turno en grande
+                  if (turnData['turnNumber'] != null) ...[
+                    const Text(
+                      'Tu número es:',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 24,
+                      ),
+                      decoration: BoxDecoration(
+                        color: primaryBlue,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${turnData['turnNumber']}',
                         style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: primaryBlue,
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Número de turno en grande
-                      if (turnData['turnNumber'] != null) ...[
-                        const Text(
-                          'Tu número es:',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 24,
-                          ),
-                          decoration: BoxDecoration(
-                            color: primaryBlue,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${turnData['turnNumber']}',
-                            style: const TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                const Text(
-                  'Regresando automáticamente...',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
+
+            const SizedBox(height: 24),
+
+            const Text(
+              'Regresando automáticamente...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
 
     // Cerrar automáticamente después de 6 segundos
@@ -570,11 +567,10 @@ class _RequestTurnViewState extends State<RequestTurnView> {
             width: 30,
             height: 30,
             child: CircularProgressIndicator(
-              value:
-                  loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                      : null,
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
               strokeWidth: 2,
               color: primaryBlue,
             ),
