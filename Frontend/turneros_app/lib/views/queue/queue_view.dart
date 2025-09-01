@@ -40,6 +40,13 @@ class _QueueViewState extends State<QueueView> {
     0xFFF9FBE7,
   ); // Amarillo verdoso claro para fondo
 
+  // Colores específicos para Asistencia Preferencial
+  static const Color preferentialBlue =
+      Color(0xFF0085C7); // Azul Pantone Process Blue
+  static const Color preferentialTeal =
+      Color(0xFF00A19A); // Verde azulado similar al 3272 C
+  static const Color preferentialGold = Color(0xFFFFD700); // Dorado mantener
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +66,13 @@ class _QueueViewState extends State<QueueView> {
     _queueController.dispose();
     _audioService.dispose();
     super.dispose();
+  }
+
+  /// Verifica si el usuario actual tiene un storeId en el rango 3000-3999
+  bool _shouldHidePickingRx() {
+    final authController = context.read<AuthController>();
+    final storeId = authController.currentUser?.storeId;
+    return storeId != null && storeId >= 3000 && storeId <= 3999;
   }
 
   @override
@@ -99,6 +113,8 @@ class _QueueViewState extends State<QueueView> {
                 );
               }
 
+              final hidePickingRx = _shouldHidePickingRx();
+
               return RefreshIndicator(
                 onRefresh: () => controller.refresh(),
                 child: LayoutBuilder(
@@ -129,17 +145,19 @@ class _QueueViewState extends State<QueueView> {
                                 controller.pharmaceuticalServicesWaiting,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            // Picking Rx Section
-                            SizedBox(
-                              height: 400,
-                              child: _buildSectionCard(
-                                'Picking Rx',
-                                controller.pickingRxPrepared,
-                                controller.pickingRxPending,
-                                isPickingRx: true,
+                            // Picking Rx Section - Solo mostrar si no está oculto
+                            if (!hidePickingRx) ...[
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 400,
+                                child: _buildSectionCard(
+                                  'Picking Rx',
+                                  controller.pickingRxPrepared,
+                                  controller.pickingRxPending,
+                                  isPickingRx: true,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       );
@@ -154,8 +172,7 @@ class _QueueViewState extends State<QueueView> {
                           // Farmacia Section
                           Expanded(
                             child: SizedBox(
-                              height:
-                                  constraints.maxHeight -
+                              height: constraints.maxHeight -
                                   32, // Altura disponible menos padding
                               child: _buildSectionCard(
                                 'Farmacia',
@@ -176,19 +193,21 @@ class _QueueViewState extends State<QueueView> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          // Picking Rx Section
-                          Expanded(
-                            child: SizedBox(
-                              height: constraints.maxHeight - 32,
-                              child: _buildSectionCard(
-                                'Picking Rx',
-                                controller.pickingRxPrepared,
-                                controller.pickingRxPending,
-                                isPickingRx: true,
+                          // Picking Rx Section - Solo mostrar si no está oculto
+                          if (!hidePickingRx) ...[
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: SizedBox(
+                                height: constraints.maxHeight - 32,
+                                child: _buildSectionCard(
+                                  'Picking Rx',
+                                  controller.pickingRxPrepared,
+                                  controller.pickingRxPending,
+                                  isPickingRx: true,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     );
@@ -235,8 +254,8 @@ class _QueueViewState extends State<QueueView> {
                       title == 'Farmacia'
                           ? Icons.local_pharmacy_outlined
                           : title == 'Picking Rx'
-                          ? Icons.receipt_long_outlined
-                          : Icons.medical_services_outlined,
+                              ? Icons.receipt_long_outlined
+                              : Icons.medical_services_outlined,
                       color: textDark,
                       size: isSmall ? 18 : 24,
                     ),
@@ -309,18 +328,17 @@ class _QueueViewState extends State<QueueView> {
               isPrepared
                   ? Icons.check_circle_outline
                   : isPending
-                  ? Icons.schedule
-                  : isAttending
-                  ? Icons.support_agent
-                  : Icons.hourglass_empty,
-              color:
-                  isPrepared
-                      ? pickingPreparedTeal
-                      : isPending
+                      ? Icons.schedule
+                      : isAttending
+                          ? Icons.support_agent
+                          : Icons.hourglass_empty,
+              color: isPrepared
+                  ? pickingPreparedTeal
+                  : isPending
                       ? pickingPendingYellow
                       : isAttending
-                      ? attendingGreen
-                      : waitingOrange,
+                          ? attendingGreen
+                          : waitingOrange,
               size: 16,
             ),
             const SizedBox(width: 4),
@@ -353,37 +371,58 @@ class _QueueViewState extends State<QueueView> {
         ),
         const SizedBox(height: 8),
         Expanded(
-          child:
-              clients.isEmpty
-                  ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24.0),
-                    child: Center(
-                      child: Text(
-                        isPrepared
-                            ? 'No hay órdenes preparadas'
-                            : isPending
-                            ? 'No hay órdenes pendientes'
-                            : 'Sin clientes',
-                        style: const TextStyle(color: textGray),
-                      ),
+          child: clients.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                  child: Center(
+                    child: Text(
+                      isPrepared
+                          ? 'No hay órdenes preparadas'
+                          : isPending
+                              ? 'No hay órdenes pendientes'
+                              : 'Sin clientes',
+                      style: const TextStyle(color: textGray),
                     ),
-                  )
-                  : ListView.separated(
-                    itemCount: clients.length,
-                    separatorBuilder:
-                        (context, index) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      return _buildClientCard(
-                        clients[index],
-                        isAttending,
-                        isPrepared: isPrepared,
-                        isPending: isPending,
-                      );
-                    },
                   ),
+                )
+              : ListView.separated(
+                  itemCount: clients.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    return _buildClientCard(
+                      clients[index],
+                      isAttending,
+                      isPrepared: isPrepared,
+                      isPending: isPending,
+                    );
+                  },
+                ),
         ),
       ],
     );
+  }
+
+  /// Verifica si un cliente pertenece a Asistencia Preferencial
+  bool _isPreferentialAssistance(QueueClientModel client) {
+    return client.comesFrom.toLowerCase().contains('asistencia preferencial') ||
+        client.comesFrom.toLowerCase().contains('preferencial');
+  }
+
+  /// Verifica si un cliente pertenece a servicios de farmacia (debe usar métodos de farmacia)
+  bool _isPharmacyService(QueueClientModel client) {
+    final comesFromLower = client.comesFrom.toLowerCase();
+
+    // Lista de servicios que son de farmacia y deben usar métodos de farmacia
+    final pharmacyServices = [
+      'atención en mostrador',
+      'asistencia preferencial',
+      'preferencial',
+      'farmacia',
+      'pharmacy',
+    ];
+
+    return pharmacyServices.any((service) => comesFromLower.contains(service));
   }
 
   Widget _buildClientCard(
@@ -392,29 +431,51 @@ class _QueueViewState extends State<QueueView> {
     bool isPrepared = false,
     bool isPending = false,
   }) {
+    final isPreferential = _isPreferentialAssistance(client);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color:
-            isPrepared
+        // Sin gradiente transparente, usar color sólido
+        color: isPreferential && !isPrepared && !isPending
+            ? Colors.white // Fondo blanco sólido para mejor contraste
+            : isPrepared
                 ? lightTeal
                 : isPending
-                ? lightYellow
-                : isAttending
-                ? lightGreen
-                : cardWhite,
-        borderRadius: BorderRadius.circular(8),
+                    ? lightYellow
+                    : isAttending
+                        ? lightGreen
+                        : cardWhite,
+        borderRadius: BorderRadius.circular(isPreferential ? 12 : 8),
         border: Border.all(
-          color:
-              isPrepared
+          color: isPreferential && !isPrepared && !isPending
+              ? preferentialBlue
+              : isPrepared
                   ? pickingPreparedTeal
                   : isPending
-                  ? pickingPendingYellow
-                  : isAttending
-                  ? attendingGreen
-                  : Colors.grey[300]!,
-          width: (isPrepared || isPending || isAttending) ? 2 : 1,
+                      ? pickingPendingYellow
+                      : isAttending
+                          ? attendingGreen
+                          : Colors.grey[300]!,
+          width: isPreferential && !isPrepared && !isPending
+              ? 3
+              : (isPrepared || isPending || isAttending)
+                  ? 2
+                  : 1,
         ),
+        boxShadow: isPreferential && !isPrepared && !isPending
+            ? [
+                BoxShadow(
+                  color: preferentialBlue.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: preferentialTeal.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,25 +483,115 @@ class _QueueViewState extends State<QueueView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                client.formattedTurn,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: textDark,
+              Expanded(
+                child: Row(
+                  children: [
+                    // Icono especial para Asistencia Preferencial
+                    if (isPreferential && !isPrepared && !isPending)
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: preferentialGold,
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: preferentialGold.withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.star,
+                          color: preferentialBlue,
+                          size: 16,
+                        ),
+                      ),
+                    Text(
+                      client.formattedTurn,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isPreferential && !isPrepared && !isPending
+                            ? preferentialBlue
+                            : textDark,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              // Badge de Asistencia Preferencial
+              if (isPreferential && !isPrepared && !isPending)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [preferentialTeal, preferentialBlue],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: preferentialBlue.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'PREFERENCIAL',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             client.clientName,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: textDark,
+              fontWeight: isPreferential && !isPrepared && !isPending
+                  ? FontWeight.w600
+                  : FontWeight.w500,
+              color: isPreferential && !isPrepared && !isPending
+                  ? preferentialBlue
+                  : textDark,
             ),
           ),
+          // Mostrar información del servicio para Asistencia Preferencial
+          if (isPreferential && !isPrepared && !isPending)
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.medical_services,
+                    size: 14,
+                    color: preferentialBlue.withValues(alpha: 0.8),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Asistencia Preferencial',
+                      style: TextStyle(
+                        color: preferentialBlue.withValues(alpha: 0.8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           if (isAttending && client.attendedBy != null)
             Padding(
               padding: const EdgeInsets.only(top: 4.0),
@@ -459,7 +610,7 @@ class _QueueViewState extends State<QueueView> {
   }
 
   Widget _buildActionButtons(QueueClientModel client, bool isAttending) {
-    final isPharmacy = client.comesFrom == 'Atención en Mostrador';
+    final isPharmacy = _isPharmacyService(client);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -977,16 +1128,15 @@ class _TransferServiceSelectorState extends State<_TransferServiceSelector> {
               hint: const Text('Seleccionar servicio'),
               value: _selectedService,
               isExpanded: true,
-              items:
-                  widget.services.map((ServiceModel service) {
-                    return DropdownMenuItem<ServiceModel>(
-                      value: service,
-                      child: Text(
-                        service.name,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    );
-                  }).toList(),
+              items: widget.services.map((ServiceModel service) {
+                return DropdownMenuItem<ServiceModel>(
+                  value: service,
+                  child: Text(
+                    service.name,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                );
+              }).toList(),
               onChanged: (ServiceModel? newValue) {
                 setState(() {
                   _selectedService = newValue;
@@ -999,10 +1149,9 @@ class _TransferServiceSelectorState extends State<_TransferServiceSelector> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed:
-                _selectedService != null
-                    ? () => widget.onServiceSelected(_selectedService!)
-                    : null,
+            onPressed: _selectedService != null
+                ? () => widget.onServiceSelected(_selectedService!)
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryDarkBlue,
               foregroundColor: Colors.white,
