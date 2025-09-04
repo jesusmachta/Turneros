@@ -160,6 +160,7 @@ class _DocumentInputViewState extends State<DocumentInputView> {
             turnNumber: turnNumber,
             cedula: cedula,
             serviceType: widget.service.type,
+            storeId: user.storeId!,
           );
           print('✅ Resultado de impresión: $printResult');
         } catch (e) {

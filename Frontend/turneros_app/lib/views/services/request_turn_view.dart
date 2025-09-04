@@ -397,6 +397,7 @@ class _RequestTurnViewState extends State<RequestTurnView> {
             turnNumber: turnNumber,
             cedula: 0, // Sin cédula para turnos directos
             serviceType: service.type,
+            storeId: user.storeId!,
           );
           print('✅ Resultado de impresión: $printResult');
         } catch (e) {

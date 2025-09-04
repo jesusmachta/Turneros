@@ -4,6 +4,8 @@ import 'package:sunmi_printer_plus/core/styles/sunmi_text_style.dart';
 import 'package:sunmi_printer_plus/core/styles/sunmi_qrcode_style.dart';
 import 'package:sunmi_printer_plus/core/enums/enums.dart';
 import 'package:sunmi_printer_plus/core/sunmi/sunmi_printer.dart';
+import 'bluetooth_printer_service.dart';
+import 'usb_printer_service.dart';
 
 /// Servicio para manejar la impresión de tickets en dispositivos Sunmi
 class PrinterService {
@@ -36,12 +38,14 @@ class PrinterService {
   /// [turnNumber] - Número del turno a imprimir
   /// [cedula] - Número de cédula del cliente
   /// [serviceType] - Tipo de servicio solicitado
+  /// [storeId] - ID de la tienda para determinar el tipo de impresora a usar
   ///
   /// Retorna un mensaje indicando el resultado de la impresión
   static Future<String> printTurnTicket({
     required int turnNumber,
     required int cedula,
     required String serviceType,
+    required int storeId,
   }) async {
     try {
       // Solo imprimir en dispositivos Android físicos
@@ -52,6 +56,19 @@ class PrinterService {
 
       print('🖨️ Iniciando impresión de ticket...');
       print('📄 Turno: $turnNumber, Servicio: $serviceType, Cédula: $cedula');
+      print('🏪 Store ID: $storeId');
+
+      // Para tiendas con ID entre 3000-3999, usar USBPrinterService
+      if (storeId >= 3000 && storeId <= 3999) {
+        print('🔌 Usando impresora USB para store ID $storeId');
+        return await USBPrinterService.printTurnTicket(
+          turnNumber: turnNumber,
+          serviceName: serviceType,
+        );
+      }
+
+      // Para otras tiendas, usar impresora Sunmi (código original)
+      print('🟡 Usando impresora Sunmi para store ID $storeId');
 
       // Verificar conexión de impresora (ya inicializada en main.dart)
       try {

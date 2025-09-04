@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 import 'controllers/auth_controller.dart';
 import 'services/printer_service.dart';
+import 'services/usb_printer_service.dart';
 import 'views/auth/login_view.dart';
 
 void main() async {
@@ -15,6 +16,9 @@ void main() async {
 
   // Inicializar impresora Sunmi
   await PrinterService.initializeSunmiPrinter();
+
+  // Inicializar impresora USB para tiendas 3000-3999
+  await USBPrinterService.initializeUSBPrinter();
 
   runApp(const TurnerosApp());
 }
