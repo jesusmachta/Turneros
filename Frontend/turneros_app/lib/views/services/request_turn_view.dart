@@ -112,13 +112,13 @@ class _RequestTurnViewState extends State<RequestTurnView> {
         foregroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leadingWidth: 120, // Aumentamos el espacio para el logo
+        leadingWidth: 200, // Aumentar aún más el espacio para el logo más grande
         leading: GestureDetector(
           onTap: _showBackofficeDialog,
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              vertical: 12.0,
-              horizontal: 16.0,
+              vertical: 6.0, // Reducir aún más el padding vertical
+              horizontal: 8.0, // Reducir aún más el padding horizontal
             ),
             child: Image.asset(
               'assets/Logos/logo_farmatodo.png',
@@ -142,9 +142,20 @@ class _RequestTurnViewState extends State<RequestTurnView> {
   }
 
   Widget _buildHeader() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Calcular tamaños responsive para pantalla 15.6" (1080x1920)
+    final verticalPadding = screenHeight * 0.025; // 2.5% de la altura (~48px)
+    final horizontalPadding = screenWidth * 0.05; // 5% del ancho (~54px)
+    final fontSize = screenWidth * 0.055; // 5.5% del ancho (~59px) - Aumentado
+    
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
+      padding: EdgeInsets.symmetric(
+        vertical: verticalPadding,
+        horizontal: horizontalPadding,
+      ),
       decoration: const BoxDecoration(
         color: primaryBlue,
         borderRadius: BorderRadius.only(
@@ -152,13 +163,13 @@ class _RequestTurnViewState extends State<RequestTurnView> {
           bottomRight: Radius.circular(24),
         ),
       ),
-      child: const Column(
+      child: Column(
         children: [
           // Título principal
           Text(
             '¡Solicita tu Turno!',
             style: TextStyle(
-              fontSize: 34,
+              fontSize: fontSize.clamp(35.0, 65.0), // Aumentar rango mínimo y máximo
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -244,15 +255,18 @@ class _RequestTurnViewState extends State<RequestTurnView> {
     final serviciosServices =
         _services.where((service) => service.type == 'Servicio').toList();
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = screenWidth * 0.05; // 5% del ancho (~54px)
+    
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Servicios de Farmacia
           if (farmaciaServices.isNotEmpty) ...[
             _buildServicesList(farmaciaServices),
-            const SizedBox(height: 24),
+            SizedBox(height: padding * 0.6),
           ],
 
           // Servicios generales
@@ -272,69 +286,78 @@ class _RequestTurnViewState extends State<RequestTurnView> {
   }
 
   Widget _buildServiceButton(ServiceModel service) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Calcular tamaños responsive para pantalla 15.6" (1080x1920)
+    final buttonHeight = screenHeight * 0.12; // 12% de la altura de pantalla (~230px)
+    final iconSize = screenWidth * 0.1; // 10% del ancho (~108px)
+    final fontSize = screenWidth * 0.04; // 4% del ancho (~43px)
+    final padding = screenWidth * 0.03; // 3% del ancho (~32px)
+    final margin = screenHeight * 0.015; // 1.5% de la altura (~29px)
+    
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: margin),
+      height: buttonHeight,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _handleServiceTap(service),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryBlue, width: 2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: primaryBlue, width: 3),
               boxShadow: [
                 BoxShadow(
-                  color: primaryBlue.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  color: primaryBlue.withOpacity(0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center, // Centrar todo el contenido horizontalmente
+              crossAxisAlignment: CrossAxisAlignment.center, // Centrar verticalmente
               children: [
                 // Icono del servicio
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: iconSize,
+                  height: iconSize,
                   decoration: BoxDecoration(
-                    color: primaryBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.transparent, // Quitar fondo gris
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     child: service.iconUrl.isNotEmpty
-                        ? _buildServiceImage(service.iconUrl)
-                        : const Icon(
+                        ? _buildServiceImage(service.iconUrl, iconSize)
+                        : Icon(
                             Icons.local_pharmacy,
                             color: primaryBlue,
-                            size: 32,
+                            size: iconSize * 0.6,
                           ),
                   ),
                 ),
 
-                const SizedBox(width: 16),
+                SizedBox(width: padding), // Espacio horizontal entre icono y texto
 
-                // Nombre del servicio
-                Expanded(
+                // Texto del servicio - flexible para adaptarse al contenido
+                Flexible(
                   child: Text(
                     service.name,
-                    style: const TextStyle(
-                      fontSize: 28,
+                    textAlign: TextAlign.center, // Centrar el texto
+                    style: TextStyle(
+                      fontSize: (fontSize * 1.1).clamp(30.0, 55.0), // Texto más grande
                       fontWeight: FontWeight.bold,
                       color: primaryBlue,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-
-                // Flecha de navegación
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  color: primaryBlue,
-                  size: 20,
                 ),
               ],
             ),
@@ -554,19 +577,20 @@ class _RequestTurnViewState extends State<RequestTurnView> {
   }
 
   /// Construye el widget de imagen para los servicios
-  Widget _buildServiceImage(String imageUrl) {
+  Widget _buildServiceImage(String imageUrl, [double? size]) {
+    final imageSize = size ?? 60;
     return Image.network(
       imageUrl,
       fit: BoxFit.cover,
-      width: 60,
-      height: 60,
+      width: imageSize,
+      height: imageSize,
       headers: const {'User-Agent': 'Flutter-App', 'Accept': 'image/*'},
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
         return Center(
           child: SizedBox(
-            width: 30,
-            height: 30,
+            width: imageSize * 0.5,
+            height: imageSize * 0.5,
             child: CircularProgressIndicator(
               value: loadingProgress.expectedTotalBytes != null
                   ? loadingProgress.cumulativeBytesLoaded /
@@ -582,7 +606,7 @@ class _RequestTurnViewState extends State<RequestTurnView> {
         // Log del error para debug
         print('Error cargando imagen: $error');
         print('URL: $imageUrl');
-        return const Icon(Icons.medical_services, color: primaryBlue, size: 32);
+        return Icon(Icons.medical_services, color: primaryBlue, size: imageSize * 0.6);
       },
     );
   }
@@ -592,61 +616,102 @@ class _RequestTurnViewState extends State<RequestTurnView> {
     final TextEditingController codeController = TextEditingController();
     final authController = context.read<AuthController>();
     final expectedCode = authController.currentUser?.storeId?.toString() ?? '';
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
-            'Acceso Backoffice',
-            style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Ingresa el código de acceso:',
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: codeController,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Código',
-                  hintText: 'Ingresa tu código',
+          contentPadding: EdgeInsets.all(screenWidth * 0.08), // 8% del ancho
+          title: Text(
+            'Acceso Backoffice',
+            style: TextStyle(
+              color: primaryBlue, 
+              fontWeight: FontWeight.bold,
+              fontSize: screenWidth * 0.045, // 4.5% del ancho (~49px)
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SizedBox(
+            width: screenWidth * 0.8, // 80% del ancho de pantalla
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Ingresa el código de acceso:',
+                  style: TextStyle(fontSize: screenWidth * 0.035), // 3.5% del ancho (~38px)
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ],
+                SizedBox(height: screenHeight * 0.03), // 3% de la altura
+                SizedBox(
+                  height: screenHeight * 0.08, // 8% de la altura (~154px)
+                  child: TextField(
+                    controller: codeController,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    style: TextStyle(fontSize: screenWidth * 0.04), // 4% del ancho
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: 'Código',
+                      hintText: 'Ingresa tu código',
+                      labelStyle: TextStyle(fontSize: screenWidth * 0.03),
+                      hintStyle: TextStyle(fontSize: screenWidth * 0.03),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.04,
+                        vertical: screenHeight * 0.02,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryBlue,
-                foregroundColor: Colors.white,
+            SizedBox(
+              height: screenHeight * 0.06, // 6% de la altura (~115px)
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  'Cancelar',
+                  style: TextStyle(fontSize: screenWidth * 0.035),
+                ),
               ),
-              onPressed: () {
-                if (codeController.text.trim() == expectedCode) {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const HomeView()),
-                  );
-                } else {
-                  Fluttertoast.showToast(
-                    msg: 'Código incorrecto',
-                    backgroundColor: Colors.red,
-                    textColor: Colors.white,
-                    gravity: ToastGravity.BOTTOM,
-                  );
-                }
-              },
-              child: const Text('Acceder'),
+            ),
+            SizedBox(
+              height: screenHeight * 0.06, // 6% de la altura (~115px)
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryBlue,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.06,
+                    vertical: screenHeight * 0.015,
+                  ),
+                ),
+                              onPressed: () {
+                  if (codeController.text.trim() == expectedCode) {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (context) => const HomeView()),
+                    );
+                  } else {
+                    Fluttertoast.showToast(
+                      msg: 'Código incorrecto',
+                      backgroundColor: Colors.red,
+                      textColor: Colors.white,
+                      gravity: ToastGravity.BOTTOM,
+                    );
+                  }
+                },
+                child: Text(
+                  'Acceder',
+                  style: TextStyle(fontSize: screenWidth * 0.035),
+                ),
+              ),
             ),
           ],
         );

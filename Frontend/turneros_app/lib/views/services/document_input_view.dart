@@ -340,18 +340,18 @@ class _DocumentInputViewState extends State<DocumentInputView> {
             // Contenido principal
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05), // 5% del ancho
                 child: Column(
                   children: [
                     // Sección de datos
                     _buildDataSection(),
 
-                    const SizedBox(height: 40),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.025), // 2.5% de la altura
 
                     // Teclado numérico
                     Expanded(child: _buildNumericKeypad()),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.015), // 1.5% de la altura
 
                     // Botón de solicitar turno
                     _buildRequestButton(),
@@ -366,9 +366,20 @@ class _DocumentInputViewState extends State<DocumentInputView> {
   }
 
   Widget _buildHeader() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Calcular tamaños responsive para pantalla 15.6" (1080x1920)
+    final verticalPadding = screenHeight * 0.02; // 2% de la altura (~38px)
+    final horizontalPadding = screenWidth * 0.05; // 5% del ancho (~54px)
+    final fontSize = screenWidth * 0.04; // 4% del ancho (~43px) - Aumentado
+    
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      padding: EdgeInsets.symmetric(
+        vertical: verticalPadding,
+        horizontal: horizontalPadding,
+      ),
       decoration: const BoxDecoration(
         color: primaryBlue,
         borderRadius: BorderRadius.only(
@@ -376,12 +387,12 @@ class _DocumentInputViewState extends State<DocumentInputView> {
           bottomRight: Radius.circular(24),
         ),
       ),
-      child: const Column(
+      child: Column(
         children: [
           Text(
             'Pide un Turno',
             style: TextStyle(
-              fontSize: 28,
+              fontSize: fontSize.clamp(28.0, 48.0), // Aumentar rango
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -392,23 +403,40 @@ class _DocumentInputViewState extends State<DocumentInputView> {
   }
 
   Widget _buildDataSection() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Calcular tamaños responsive para pantalla 15.6" (1080x1920)
+    final titleFontSize = screenWidth * 0.035; // 3.5% del ancho (~38px) - Aumentado
+    final subtitleFontSize = screenWidth * 0.026; // 2.6% del ancho (~28px) - Aumentado
+    final inputHeight = screenHeight * 0.07; // 7% de la altura (~134px)
+    final inputFontSize = screenWidth * 0.025; // 2.5% del ancho (~27px)
+    final borderRadius = screenWidth * 0.015; // 1.5% del ancho (~16px)
+    final horizontalPadding = screenWidth * 0.025; // 2.5% del ancho (~27px)
+    final spacing = screenWidth * 0.02; // 2% del ancho (~22px)
+    
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center, // Centrar contenido
       children: [
-        const Text(
+        Text(
           'Datos',
+          textAlign: TextAlign.center, // Centrar texto
           style: TextStyle(
-            fontSize: 20,
+            fontSize: titleFontSize.clamp(24.0, 42.0), // Aumentar rango
             fontWeight: FontWeight.bold,
             color: primaryBlue,
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
+        SizedBox(height: spacing * 0.4),
+        Text(
           'Ingresa tu documento para solicitar un turno',
-          style: TextStyle(fontSize: 14, color: Colors.grey),
+          textAlign: TextAlign.center, // Centrar texto
+          style: TextStyle(
+            fontSize: subtitleFontSize.clamp(18.0, 32.0), // Aumentar rango
+            color: Colors.grey,
+          ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: spacing * 1.2),
 
         // Dropdown y campo de documento en una fila
         Row(
@@ -417,21 +445,31 @@ class _DocumentInputViewState extends State<DocumentInputView> {
             Expanded(
               flex: 2,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                height: inputHeight,
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300, width: 2),
+                  borderRadius: BorderRadius.circular(borderRadius),
                   color: Colors.white,
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedDocumentType,
                     isExpanded: true,
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                    style: TextStyle(
+                      fontSize: inputFontSize.clamp(16.0, 30.0),
+                      color: Colors.black87,
+                    ),
                     items: _documentTypes.map((String type) {
                       return DropdownMenuItem<String>(
                         value: type,
-                        child: Text(type, overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          type, 
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: inputFontSize.clamp(16.0, 30.0),
+                          ),
+                        ),
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
@@ -444,25 +482,31 @@ class _DocumentInputViewState extends State<DocumentInputView> {
               ),
             ),
 
-            const SizedBox(width: 12),
+            SizedBox(width: spacing),
 
             // Campo de número de documento
             Expanded(
               flex: 3,
               child: Container(
-                padding: const EdgeInsets.all(16),
+                height: inputHeight,
+                padding: EdgeInsets.all(horizontalPadding),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300, width: 2),
+                  borderRadius: BorderRadius.circular(borderRadius),
                   color: Colors.white,
                 ),
-                child: Text(
-                  _documentNumber.isEmpty ? 'N° de Documento' : _documentNumber,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _documentNumber.isEmpty
-                        ? Colors.grey.shade500
-                        : Colors.black87,
+                child: Center(
+                  child: Text(
+                    _documentNumber.isEmpty ? 'N° de Documento' : _documentNumber,
+                    style: TextStyle(
+                      fontSize: inputFontSize.clamp(16.0, 30.0),
+                      color: _documentNumber.isEmpty
+                          ? Colors.grey.shade500
+                          : Colors.black87,
+                      fontWeight: _documentNumber.isEmpty 
+                          ? FontWeight.normal 
+                          : FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -630,6 +674,15 @@ class _DocumentInputViewState extends State<DocumentInputView> {
   }
 
   Widget _buildRequestButton() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Calcular tamaños responsive para pantalla 15.6" (1080x1920)
+    final buttonHeight = screenHeight * 0.08; // 8% de la altura (~154px)
+    final fontSize = screenWidth * 0.028; // 2.8% del ancho (~30px)
+    final borderRadius = screenWidth * 0.02; // 2% del ancho (~22px)
+    final loadingSize = buttonHeight * 0.35; // 35% de la altura del botón
+    
     final bool isEnabled = _documentNumber.length >= 6 &&
         _documentNumber.length <= 15 &&
         _selectedDocumentType != null &&
@@ -638,7 +691,7 @@ class _DocumentInputViewState extends State<DocumentInputView> {
 
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: buttonHeight,
       child: ElevatedButton(
         onPressed: isEnabled ? _onRequestTurn : null,
         style: ElevatedButton.styleFrom(
@@ -647,22 +700,25 @@ class _DocumentInputViewState extends State<DocumentInputView> {
           disabledBackgroundColor: Colors.grey.shade300,
           disabledForegroundColor: Colors.grey.shade600,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(borderRadius),
           ),
-          elevation: isEnabled ? 4 : 0,
+          elevation: isEnabled ? 6 : 0,
         ),
         child: _isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
+            ? SizedBox(
+                width: loadingSize,
+                height: loadingSize,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 3,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : const Text(
+            : Text(
                 'Pedir Turno',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: fontSize.clamp(18.0, 35.0),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
       ),
     );
